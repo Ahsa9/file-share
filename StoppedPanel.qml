@@ -41,7 +41,7 @@ Item {
                 color: "white"
                 font.family: fontMain
                 font.pixelSize: 28
-                font.weight: Font.DemiBold
+                font.weight: Font.Bold
             }
         }
 
@@ -128,13 +128,15 @@ Item {
                         anchors.horizontalCenterOffset: -20
                         font.bold: true
                         color: "white"
-                        anchors.centerIn: parent
+                        anchors.left: parent.left
+                        anchors.margins: -8
                     }
                 }
 
                 // UNIT outside the box (still part of container)
                 Text {
                     id: totalUnit
+                    x: 249
                     text: "AED"
                     font.family: fontUnit
                     font.pixelSize: 20
@@ -142,8 +144,6 @@ Item {
                     color: "white"
                     opacity: .8
                     anchors.verticalCenter: totalAmountBox.verticalCenter
-                    anchors.left: totalAmountBox.right
-                    anchors.leftMargin: -10
                 }
             }
         }

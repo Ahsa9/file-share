@@ -8,8 +8,6 @@ Item {
     height: parent ? parent.height : 720
     visible: false
     opacity: 0
-    property string fontTotalizer: "Roboto"
-
     Timer {
         id: hideTimer
         interval: 400
@@ -92,7 +90,7 @@ Item {
                             }
                             Text {
                                 text: "TOTALIZERS"
-                                font.family: fontTotalizer
+                                font.family: "Roboto"
                                 font.pixelSize: 40
                                 color: "white"
                             }
@@ -131,14 +129,14 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/sliders 1.png"
+                                    source: "qrc:/images/numberOfJourneys.png"
                                     width: 52.536
                                     height: 46.744
                                 }
 
                                 Text {
                                     text: "Number of Journeys"
-                                    font.family: fontTotalizer
+                                    font.family: "Roboto"
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
                                 }
@@ -154,7 +152,7 @@ Item {
                                 Text {
                                     id: numText_row2_left
                                     text: "250"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
@@ -188,14 +186,14 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/add-text-line 1.png"
+                                    source: "qrc:/images/totalExtras.png"
                                     width: 52.536
                                     height: 46.744
                                 }
 
                                 Text {
                                     text: "Money Charged\n[Supplements]"
-                                    font.family: fontTotalizer
+                                    font.family: "Roboto"
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
                                 }
@@ -211,7 +209,7 @@ Item {
                                 Text {
                                     id: unitText_row2_right
                                     text: "AED"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
@@ -221,7 +219,7 @@ Item {
                                 Text {
                                     id: numText_row2_right
                                     text: "25.000"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
@@ -263,14 +261,14 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/Group 118 1.png"
+                                    source: "qrc:/images/distance.png"
                                     width: 52.536
                                     height: 46.744
                                 }
 
                                 Text {
                                     text: "Distance Traveled\nWhen Hired"
-                                    font.family: fontTotalizer
+                                    font.family: "Roboto"
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
                                 }
@@ -286,7 +284,7 @@ Item {
                                 Text {
                                     id: unitText_row3_left
                                     text: "KM"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
@@ -296,7 +294,7 @@ Item {
                                 Text {
                                     id: numText_row3_left
                                     text: "500"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
@@ -330,14 +328,14 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/Group 115 1.png"
+                                    source: "qrc:/images/money.png"
                                     width: 51.8
                                     height: 28.76
                                 }
 
                                 Text {
                                     text: "Money Charged\n[Fare]"
-                                    font.family: fontTotalizer
+                                    font.family: "Roboto"
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
                                 }
@@ -353,7 +351,7 @@ Item {
                                 Text {
                                     id: unitText_row3_right
                                     text: "AED"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
@@ -363,7 +361,7 @@ Item {
                                 Text {
                                     id: numText_row3_right
                                     text: "55.000"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
@@ -404,14 +402,14 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/Group 178 1.png"
+                                    source: "qrc:/images/distancebytaxi.png"
                                     width: 57.5
                                     height: 43.7
                                 }
 
                                 Text {
                                     text: "Distance Traveled By\nThe Taxi"
-                                    font.family: fontTotalizer
+                                    font.family: "Roboto"
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
                                 }
@@ -427,7 +425,7 @@ Item {
                                 Text {
                                     id: unitText_row4_left
                                     text: "KM"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
@@ -437,7 +435,7 @@ Item {
                                 Text {
                                     id: numText_row4_left
                                     text: "700"
-                                    font.family: fontBoldCondensed
+                                    font.family: "Roboto Condensed"
                                     font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
@@ -477,7 +475,7 @@ Item {
 
         Behavior on opacity {
             NumberAnimation {
-                duration: 200
+                duration: 400
             }
         }
     }

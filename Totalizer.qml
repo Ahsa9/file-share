@@ -112,7 +112,7 @@ Item {
                     Rectangle {
                         width: 837.5
                         height: 124
-                        radius: 12
+                        radius: 2
                         border.width: 2
                         border.color: "#117BB1"
                         color: "transparent"
@@ -131,13 +131,13 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/add-text-line 1.png"
+                                    source: "qrc:/images/sliders 1.png"
                                     width: 52.536
                                     height: 46.744
                                 }
 
                                 Text {
-                                    text: "Money Charged\n[Supplements]"
+                                    text: "Number of Journeys"
                                     font.family: fontTotalizer
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
@@ -152,23 +152,13 @@ Item {
                                 width: numText_row2_left.width + unitText_row2_left.width + 16
 
                                 Text {
-                                    id: unitText_row2_left
-                                    text: "AED"
-                                    font.family: fontBoldCondensed
-                                    font.pixelSize: 52
-                                    color: "white"
-                                    anchors.right: parent.right
-                                    anchors.baseline: numText_row2_left.baseline
-                                }
-
-                                Text {
                                     id: numText_row2_left
-                                    text: "25.000"
+                                    text: "250"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
-                                    anchors.right: unitText_row2_left.left
+                                    anchors.right: parent.left
                                     anchors.rightMargin: 8
                                 }
                             }
@@ -253,7 +243,7 @@ Item {
                     Rectangle {
                         width: 837.5
                         height: 124
-                        radius: 12
+                        radius: 2
                         border.width: 2
                         border.color: "#117BB1"
                         color: "transparent"
@@ -273,13 +263,13 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/add-text-line 1.png"
+                                    source: "qrc:/images/Group 118 1.png"
                                     width: 52.536
                                     height: 46.744
                                 }
 
                                 Text {
-                                    text: "Money Charged\n[Supplements]"
+                                    text: "Distance Traveled\nWhen Hired"
                                     font.family: fontTotalizer
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
@@ -295,7 +285,7 @@ Item {
 
                                 Text {
                                     id: unitText_row3_left
-                                    text: "AED"
+                                    text: "KM"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 52
                                     color: "white"
@@ -305,7 +295,7 @@ Item {
 
                                 Text {
                                     id: numText_row3_left
-                                    text: "25.000"
+                                    text: "500"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 62
                                     color: "white"
@@ -321,7 +311,7 @@ Item {
                     Rectangle {
                         width: 837.5
                         height: 124
-                        radius: 12
+                        radius: 2
                         border.width: 2
                         border.color: "#117BB1"
                         color: "transparent"
@@ -340,13 +330,13 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/add-text-line 1.png"
-                                    width: 52.536
-                                    height: 46.744
+                                    source: "qrc:/images/Group 115 1.png"
+                                    width: 51.8
+                                    height: 28.76
                                 }
 
                                 Text {
-                                    text: "Money Charged\n[Supplements]"
+                                    text: "Money Charged\n[Fare]"
                                     font.family: fontTotalizer
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
@@ -372,7 +362,7 @@ Item {
 
                                 Text {
                                     id: numText_row3_right
-                                    text: "25.000"
+                                    text: "55.000"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 62
                                     color: "white"
@@ -395,7 +385,7 @@ Item {
                     Rectangle {
                         width: 837.5
                         height: 124
-                        radius: 12
+                        radius: 2
                         border.width: 2
                         border.color: "#117BB1"
                         color: "transparent"
@@ -414,13 +404,13 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/add-text-line 1.png"
-                                    width: 52.536
-                                    height: 46.744
+                                    source: "qrc:/images/Group 178 1.png"
+                                    width: 57.5
+                                    height: 43.7
                                 }
 
                                 Text {
-                                    text: "Money Charged\n[Supplements]"
+                                    text: "Distance Traveled By\nThe Taxi"
                                     font.family: fontTotalizer
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
@@ -436,7 +426,7 @@ Item {
 
                                 Text {
                                     id: unitText_row4_left
-                                    text: "AED"
+                                    text: "KM"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 52
                                     color: "white"
@@ -446,7 +436,7 @@ Item {
 
                                 Text {
                                     id: numText_row4_left
-                                    text: "25.000"
+                                    text: "700"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 62
                                     color: "white"
@@ -462,7 +452,7 @@ Item {
                     Rectangle {
                         width: 837.5
                         height: 124
-                        radius: 12
+                        radius: 2
                         border.width: 2
                         border.color: "#117BB1"
                         color: "transparent"
@@ -481,13 +471,13 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/add-text-line 1.png"
-                                    width: 52.536
-                                    height: 46.744
+                                    source: "qrc:/images/Group 115 1.png"
+                                    width: 51.8
+                                    height: 28.76
                                 }
 
                                 Text {
-                                    text: "Money Charged\n[Supplements]"
+                                    text: "Total Idle Distance"
                                     font.family: fontTotalizer
                                     font.pixelSize: 40
                                     color: "#0FE6EF"
@@ -503,7 +493,7 @@ Item {
 
                                 Text {
                                     id: unitText_row4_right
-                                    text: "AED"
+                                    text: "KM"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 52
                                     color: "white"
@@ -513,7 +503,7 @@ Item {
 
                                 Text {
                                     id: numText_row4_right
-                                    text: "25.000"
+                                    text: "82"
                                     font.family: fontBoldCondensed
                                     font.pixelSize: 62
                                     color: "white"

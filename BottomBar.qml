@@ -34,23 +34,23 @@ Item {
                 id: iconModel
                 ListElement {
                     normal: "qrc:/images/info.png"
-                    hover: "qrc:/images/info1.png"
+                    hover: "qrc:/images/info_active.png"
                 }
                 ListElement {
-                    normal: "qrc:/images/notification.png"
-                    hover: "qrc:/images/notification1.png"
+                    normal: "qrc:/images/bill.png"
+                    hover: "qrc:/images/bill_active.png"
                 }
                 ListElement {
-                    normal: "qrc:/images/stats.png"
-                    hover: "qrc:/images/stats1.png"
+                    normal: "qrc:/images/trend.png"
+                    hover: "qrc:/images/trend_active.png"
                 }
                 ListElement {
                     normal: "qrc:/images/radio.png"
-                    hover: "qrc:/images/radio1.png"
+                    hover: "qrc:/images/radio_active.png"
                 }
                 ListElement {
-                    normal: "qrc:/images/settings.png"
-                    hover: "qrc:/images/settings1.png"
+                    normal: "qrc:/images/setting.png"
+                    hover: "qrc:/images/setting_active.png"
                 }
             }
 
@@ -83,7 +83,7 @@ Item {
                         height: 88
                         x: -10
                         y: -10
-                        source: "qrc:/images/hoverbg.png"
+                        source: "qrc:/images/blur_rectangle.png"
                         z: 0
                         smooth: true
                         opacity: 0

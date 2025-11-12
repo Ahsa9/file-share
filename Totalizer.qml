@@ -8,6 +8,7 @@ Item {
     height: parent ? parent.height : 720
     visible: false
     opacity: 0
+
     Timer {
         id: hideTimer
         interval: 400
@@ -55,11 +56,10 @@ Item {
         ScrollView {
             id: scrollArea
             anchors.fill: parent
-            anchors.leftMargin: 32
-            anchors.rightMargin: 32
-            anchors.topMargin: 20
-            anchors.bottomMargin: 20
+            anchors.margins: 20
             clip: true
+
+            // Keep the scrollbar always off or change policy if needed
             ScrollBar.vertical.policy: ScrollBar.AlwaysOff
 
             Column {
@@ -98,15 +98,12 @@ Item {
                     }
                 }
 
-                // Rows 2, 3, 4 fully populated with content in all rectangles
-
                 // Row 2
                 Row {
                     width: parent.width
                     height: 124
                     spacing: 56
 
-                    // Left Rectangle
                     Rectangle {
                         width: 837.5
                         height: 124
@@ -147,7 +144,7 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: 20
                                 height: 60
-                                width: numText_row2_left.width + unitText_row2_left.width + 16
+                                width: numText_row2_left.width + 16 // keep 250 in place
 
                                 Text {
                                     id: numText_row2_left
@@ -156,14 +153,13 @@ Item {
                                     font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
-                                    anchors.right: parent.left
-                                    anchors.rightMargin: 8
+                                    anchors.right: parent.right
                                 }
                             }
                         }
                     }
 
-                    // Right Rectangle
+                    // Right Rectangle stays the same
                     Rectangle {
                         width: 837.5
                         height: 124
@@ -231,6 +227,7 @@ Item {
                     }
                 }
 
+                // Rows 3 and 4 stay the same as before
                 // Row 3
                 Row {
                     width: parent.width
@@ -246,7 +243,6 @@ Item {
                         border.color: "#117BB1"
                         color: "transparent"
 
-                        // Copy content from original
                         Rectangle {
                             id: frame1568_row3_left
                             width: 777.14
@@ -447,35 +443,21 @@ Item {
                     }
 
                     // Right Rectangle
+                    // (Add your content here if needed)
                 }
-            }
-        }
-
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AlwaysOn
-            width: 32
-            contentItem: Rectangle {
-                implicitWidth: 32
-                radius: 16
-                color: "#029BBE"
-            }
-            background: Rectangle {
-                implicitWidth: 32
-                color: "#082F43"
-                radius: 16
             }
         }
 
         Behavior on y {
             NumberAnimation {
-                duration: 400
+                duration: 500
                 easing.type: Easing.OutCubic
             }
         }
 
         Behavior on opacity {
             NumberAnimation {
-                duration: 400
+                duration: 500
             }
         }
     }

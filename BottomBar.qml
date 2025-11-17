@@ -1,145 +1,285 @@
 import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Window 2.15
 import QtGraphicalEffects 1.15
 
 Item {
-    id: barContainer
-    width: 632
+    id: bottomBarContainer
+    width: 372
     height: 108
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     clip: true
-    z: 2
 
-    // --- Window reference passed from main.qml ---
-    property Window windowRef
+    property QtObject windowRef
+    // Needed for totalizer popup reference
 
+    // Property to track which popup is currently open
+    property string activePopup: ""
+
+    // Function to handle popup state changes
+    function setPopupState(popupName, isOpen) {
+        if (isOpen) {
+            activePopup = popupName
+        } else if (activePopup === popupName) {
+            activePopup = ""
+        }
+        updateIconStates()
+    }
+
+    // Function to update all icon states
+    function updateIconStates() {
+        for (var i = 0; i < iconRow.children.length; i++) {
+            var loader = iconRow.children[i]
+            if (loader && loader.item) {
+                loader.item.updateState()
+            }
+        }
+    }
+
+    // === Draw a top-curved, bottom-flat bar ===
     Rectangle {
         id: bottomBar
-        anchors.fill: parent
-        color: Qt.rgba(1 / 255, 2 / 255, 25 / 255, 0.6)
+        width: parent.width
+        height: parent.height + radius
+        y: 0
         radius: 40
+        color: Qt.rgba(0, 0.49, 0.60, 0.68)
         border.width: 0
-        z: 2
+        layer.enabled: true
 
-        Item {
-            id: iconLayer
-            anchors.fill: parent
-            property int startX: 33
-            property int spacingX: 130
-            property int topY: 34
+        // Mask the lower curve so only the top remains curved
+        Rectangle {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            height: radius
+            color: parent.color
+            radius: 0
+        }
+    }
 
-            ListModel {
-                id: iconModel
-                ListElement {
-                    normal: "qrc:/images/info.png"
-                    hover: "qrc:/images/info_active.png"
+    // === ICON ROW ===
+    Row {
+        id: iconRow
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: parent.left
+        anchors.leftMargin: 21
+        anchors.right: parent.right
+        anchors.rightMargin: 32
+        z: 3
+        spacing: 69
+
+        Component {
+            id: hoverIcon
+            Item {
+                width: 64
+                height: 64
+                anchors.verticalCenter: parent.verticalCenter
+
+                property alias normalSource: normal.source
+                property alias activeSource: active.source
+                property string popupName: ""
+                property bool isHovered: false
+                property bool isActive: false
+                signal clicked
+
+                function updateState() {
+                    if (activePopup === "") {
+                        // No popup open - normal hover behavior
+                        if (isHovered) {
+                            // This icon is hovered - show normal+shade
+                            normal.visible = true
+                            active.visible = false
+                            hoverShade.opacity = 1.0
+                            isActive = true
+                        } else {
+                            // Check if any other icon is hovered
+                            var anyHovered = false
+                            for (var i = 0; i < iconRow.children.length; i++) {
+                                var loader = iconRow.children[i]
+                                if (loader && loader.item && loader !== parent
+                                        && loader.item.isHovered) {
+                                    anyHovered = true
+                                    break
+                                }
+                            }
+
+                            if (anyHovered) {
+                                // Another icon is hovered - show active image
+                                normal.visible = false
+                                active.visible = true
+                                hoverShade.opacity = 0.0
+                                isActive = true
+                            } else {
+                                // No hover anywhere - show normal state
+                                normal.visible = true
+                                active.visible = false
+                                hoverShade.opacity = 0.0
+                                isActive = false
+                            }
+                        }
+                    } else {
+                        // Popup open - special behavior
+                        if (activePopup === popupName) {
+                            // This is the icon that opened the popup
+                            // Show normal image with shade (always)
+                            normal.visible = true
+                            active.visible = false
+                            hoverShade.opacity = 1.0
+                            isActive = false
+                        } else {
+                            // Other icons show active image with no shade
+                            normal.visible = false
+                            active.visible = true
+                            hoverShade.opacity = 0.0
+                            isActive = true
+                        }
+                    }
                 }
-                ListElement {
-                    normal: "qrc:/images/bill.png"
-                    hover: "qrc:/images/bill_active.png"
+
+                Image {
+                    id: hoverShade
+                    source: "qrc:/images/hovor_shade.png"
+                    anchors.centerIn: parent
+                    width: 80
+                    height: 80
+                    opacity: 0.0
+                    smooth: true
+                    z: 0
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: 150
+                            easing.type: Easing.InOutQuad
+                        }
+                    }
                 }
-                ListElement {
-                    normal: "qrc:/images/trend.png"
-                    hover: "qrc:/images/trend_active.png"
+
+                Image {
+                    id: normal
+                    anchors.centerIn: parent
+                    width: 44
+                    height: 44
+                    smooth: true
+                    z: 1
                 }
-                ListElement {
-                    normal: "qrc:/images/radio.png"
-                    hover: "qrc:/images/radio_active.png"
+
+                Image {
+                    id: active
+                    anchors.centerIn: parent
+                    width: 44
+                    height: 44
+                    smooth: true
+                    z: 2
                 }
-                ListElement {
-                    normal: "qrc:/images/setting.png"
-                    hover: "qrc:/images/setting_active.png"
+
+                MouseArea {
+                    id: area
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onEntered: {
+                        isHovered = true
+                        updateState()
+                        // Update all other icons too
+                        bottomBarContainer.updateIconStates()
+                    }
+                    onExited: {
+                        isHovered = false
+                        updateState()
+                        // Update all other icons too
+                        bottomBarContainer.updateIconStates()
+                    }
+                    onClicked: {
+                        parent.clicked()
+                    }
+                }
+
+                Component.onCompleted: {
+                    updateState()
                 }
             }
+        }
 
-            Repeater {
-                model: iconModel
-                delegate: Item {
-                    width: 40
-                    height: 40
-                    x: iconLayer.startX + index * iconLayer.spacingX
-                    y: iconLayer.topY
+        Loader {
+            id: infoIcon
+            sourceComponent: hoverIcon
+            onLoaded: {
+                item.normalSource = "qrc:/images/info.png"
+                item.activeSource = "qrc:/images/info_active(light).png"
+                item.popupName = "info"
 
-                    Image {
-                        id: normal
-                        anchors.fill: parent
-                        source: model.normal
-                        z: 2
-                        opacity: 1
-                    }
-                    Image {
-                        id: hover
-                        anchors.fill: parent
-                        source: model.hover
-                        z: 2
-                        opacity: 0
-                    }
+                item.clicked.connect(function () {
+                    console.log("Info icon clicked")
+                    // Add your info popup logic here
+                })
+            }
+        }
 
-                    Image {
-                        id: bg
-                        width: 64
-                        height: 88
-                        x: -10
-                        y: -10
-                        source: "qrc:/images/blur_rectangle.png"
-                        z: 0
-                        smooth: true
-                        opacity: 0
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 200
-                                easing.type: Easing.InOutQuad
+        Loader {
+            id: billIcon
+            sourceComponent: hoverIcon
+            onLoaded: {
+                item.normalSource = "qrc:/images/bill.png"
+                item.activeSource = "qrc:/images/bill_active(light).png"
+                item.popupName = "bill"
+
+                item.clicked.connect(function () {
+                    console.log("Bill icon clicked")
+                    // Add your bill popup logic here
+                })
+            }
+        }
+
+        Loader {
+            id: trendIcon
+            sourceComponent: hoverIcon
+            onLoaded: {
+                item.normalSource = "qrc:/images/trend.png"
+                item.activeSource = "qrc:/images/trend_active(light).png"
+                item.popupName = "trend"
+
+                item.clicked.connect(function () {
+                    console.log("Trend icon clicked")
+
+                    // Create the popup if it doesn't exist
+                    if (!windowRef.totalizerPopup) {
+                        console.log("Creating totalizer popup...")
+                        var component = Qt.createComponent(
+                                    "qrc:/components/Totalizers.qml")
+                        if (component.status === Component.Ready) {
+                            windowRef.totalizerPopup = component.createObject(
+                                        windowRef)
+                            if (windowRef.totalizerPopup) {
+                                console.log("Totalizer popup created successfully")
+                                windowRef.totalizerPopup.visible = false
+                                windowRef.totalizerPopup.z = 100 // Ensure it's on top
+
+                                // Connect to the popup's visibility changes
+                                windowRef.totalizerPopup.visibleChanged.connect(
+                                            function () {
+                                                bottomBarContainer.setPopupState(
+                                                            "trend",
+                                                            windowRef.totalizerPopup.visible)
+                                            })
+                            } else {
+                                console.error(
+                                            "Failed to create totalizer popup object")
                             }
+                        } else {
+                            console.error("Error loading Totalizers.qml:",
+                                          component.errorString())
                         }
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onEntered: hoverIcon(true)
-                        onExited: hoverIcon(false)
-                        onClicked: {
-                            console.log("Icon", index + 1, "clicked")
-
-                            // --- Only trigger the 3rd button (index 2) ---
-                            if (index === 2 && windowRef) {
-                                // Create the popup if it doesn't exist
-                                if (!windowRef.totalizerPopup) {
-                                    let component = Qt.createComponent(
-                                                      "qrc:/Totalizer.qml")
-                                    if (component.status === Component.Ready) {
-                                        windowRef.totalizerPopup = component.createObject(
-                                                    windowRef, {
-                                                        "anchors": {
-                                                            "fill": windowRef
-                                                        },
-                                                        "visible": false
-                                                    })
-                                    } else {
-                                        console.error(
-                                                    "Failed to load Totalizer.qml")
-                                    }
-                                }
-
-                                // Toggle visibility
-                                if (windowRef.totalizerPopup) {
-                                    windowRef.totalizerPopup.visible
-                                            = !windowRef.totalizerPopup.visible
-                                    if (windowRef.totalizerPopup.visible)
-                                        windowRef.totalizerPopup.show()
-                                }
-                            }
+                    // Toggle visibility
+                    if (windowRef.totalizerPopup) {
+                        if (windowRef.totalizerPopup.visible) {
+                            windowRef.totalizerPopup.hide()
+                            bottomBarContainer.setPopupState("trend", false)
+                        } else {
+                            windowRef.totalizerPopup.show()
+                            bottomBarContainer.setPopupState("trend", true)
                         }
                     }
-
-                    function hoverIcon(active) {
-                        bg.opacity = active ? 1 : 0
-                        normal.opacity = active ? 0 : 1
-                        hover.opacity = active ? 1 : 0
-                    }
-                }
+                })
             }
         }
     }

@@ -7,53 +7,13 @@ Window {
     width: 2560
     height: 720
     visible: true
-    color: "black"
-    flags: Qt.FramelessWindowHint | Qt.Window
-    visibility: Window.FullScreen
+    color: "#121217"
+    title: "TaxiMeter"
+    flags: Qt.Window
+    visibility: "Windowed"
 
-    property var totalizerPopup: undefined
-
-    // === TOTALIZER POPUP ===
-    Item {
-        id: totalizerPopup
-        width: root.width
-        height: root.height
-        visible: false
-        z: 50 // above everything
-
-        Rectangle {
-            anchors.fill: parent
-            color: "#00000080" // semi-transparent overlay
-        }
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 20
-
-            Text {
-                text: "TOTALIZER"
-                font.pixelSize: 60
-                color: "white"
-                horizontalAlignment: Text.AlignHCenter
-            }
-
-            Text {
-                text: "0.00 KM"
-                font.pixelSize: 48
-                color: "white"
-                horizontalAlignment: Text.AlignHCenter
-            }
-        }
-
-        Timer {
-            id: hidePopupTimer
-            interval: 3000
-            running: false
-            repeat: false
-            onTriggered: totalizerPopup.visible = false
-        }
-    }
-
+    // Add this property
+    property var totalizerPopup: null
     // === MAP ALWAYS BEHIND EVERYTHING ===
     Loader {
         id: mapLoader
@@ -70,23 +30,23 @@ Window {
         z: 1
     }
 
-    // === HOME SCREEN COMPONENT ===
+    // === HOME SCREEN ===
     Component {
         id: homeScreen
+
         Item {
             anchors.fill: parent
 
-            // --- HIRED PANEL (ON TOP OF TOPBAR) ---
+            // Background image removed
             HiredPanel {
                 id: hiredPanel
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.leftMargin: 52
                 visible: appCore.taxiMeterStatus.toUpperCase() === "HIRED"
-                z: 3
+                z: 10
             }
 
-            // --- STOPPED PANEL (HIGHEST PRIORITY WHEN ACTIVE) ---
             StoppedPanel {
                 id: stoppedPanel
                 anchors.left: parent.left
@@ -95,15 +55,13 @@ Window {
                 z: 20
             }
 
-            // --- TOP BAR (BELOW HIRED PANEL, ABOVE MAP) ---
             TopBar {
                 id: headerBar
                 anchors.top: parent.top
                 width: parent.width
-                z: 2
+                z: 4
             }
 
-            // --- TRIP BUTTON ---
             TripButton {
                 id: tripButton
                 anchors.left: parent.left
@@ -112,15 +70,15 @@ Window {
                 z: 5
             }
 
-            // --- BOTTOM BAR ---
             BottomBar {
                 id: bottomBar
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 z: 5
+                windowRef: root // pass the Window reference like MainBar
             }
 
-            // ✅ MAP BUTTON REMOVED COMPLETELY
+            // ✅ MAP BUTTON REMOVED
         }
     }
 }

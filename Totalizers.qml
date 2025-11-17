@@ -9,6 +9,13 @@ Item {
     visible: false
     opacity: 0
 
+    // Fallback variables for appCore values
+    property string fallbackNumberOfJourneys: "25555550"
+    property string fallbackMoneyChargedSupplements: "25555555.00"
+    property string fallbackHiredDistance: "50555550"
+    property string fallbackMoneyChargedFare: "55555555.00"
+    property string fallbackTaxiDistance: "700"
+
     Timer {
         id: hideTimer
         interval: 400
@@ -28,17 +35,33 @@ Item {
         id: popupRect
         width: 1859
         height: 454
-        anchors.horizontalCenter: parent ? parent.horizontalCenter : undefined
+        anchors.centerIn: parent
         y: height
         radius: 40
-        color: Qt.rgba(1 / 255, 2 / 255, 25 / 255, 0.6)
+        color: Qt.rgba(0 / 255, 125 / 255, 153 / 255, 0.8)
         border.color: "#FFFFFF"
+        border.width: 1
 
         layer.enabled: true
         layer.effect: DropShadow {
-            color: "#00000040"
-            x: 0
-            y: 4
+            color: "#40000000"
+            horizontalOffset: 0
+            verticalOffset: 4
+            radius: 14
+            samples: 29
+            spread: 0
+        }
+
+        // Backdrop filter effect (approximation since Qt doesn't have direct backdrop-filter)
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: "transparent"
+            opacity: 0.3
+            layer.enabled: true
+            layer.effect: FastBlur {
+                radius: 2
+            }
         }
 
         Rectangle {
@@ -46,7 +69,7 @@ Item {
             width: 16
             height: 412
             radius: 90
-            color: "#082F43"
+            color: "white"
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.topMargin: 20
@@ -86,13 +109,14 @@ Item {
                             Image {
                                 width: 50
                                 height: 50
-                                source: "qrc:/images/totalizer.png"
+                                source: "qrc:/images/totalizer(light).png"
                             }
                             Text {
                                 text: "TOTALIZERS"
                                 font.family: "Roboto"
                                 font.pixelSize: 40
                                 color: "white"
+                                font.bold: true
                             }
                         }
                     }
@@ -109,11 +133,11 @@ Item {
                         height: 124
                         radius: 2
                         border.width: 2
-                        border.color: "#117BB1"
+                        border.color: "white"
                         color: "transparent"
 
                         Rectangle {
-                            id: frame1568_row2_left
+                            id: numberOfJourneys_box
                             width: 777.14
                             height: 63.3
                             anchors.centerIn: parent
@@ -126,7 +150,7 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/numberOfJourneys.png"
+                                    source: "qrc:/images/numberOfJourneys(light).png"
                                     width: 52.536
                                     height: 46.744
                                 }
@@ -134,8 +158,8 @@ Item {
                                 Text {
                                     text: "Number of Journeys"
                                     font.family: "Roboto"
-                                    font.pixelSize: 40
-                                    color: "#0FE6EF"
+                                    font.pixelSize: 38
+                                    color: "white"
                                 }
                             }
 
@@ -144,13 +168,14 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: 20
                                 height: 60
-                                width: numText_row2_left.width + 16 // keep 250 in place
+                                width: numberOfJourneys_value.width + 16
 
                                 Text {
-                                    id: numText_row2_left
-                                    text: "250"
+                                    id: numberOfJourneys_value
+                                    text: typeof appCore !== 'undefined'
+                                          && appCore.numberOfJourneys ? appCore.numberOfJourneys : fallbackNumberOfJourneys
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 62
+                                    font.pixelSize: 55
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.right: parent.right
@@ -165,11 +190,11 @@ Item {
                         height: 124
                         radius: 2
                         border.width: 2
-                        border.color: "#117BB1"
+                        border.color: "white"
                         color: "transparent"
 
                         Rectangle {
-                            id: frame1568_row2_right
+                            id: moneyChargedSupplements_box
                             width: 777.14
                             height: 63.3
                             anchors.centerIn: parent
@@ -182,7 +207,7 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/totalExtras.png"
+                                    source: "qrc:/images/totalExtras(light).png"
                                     width: 52.536
                                     height: 46.744
                                 }
@@ -190,8 +215,8 @@ Item {
                                 Text {
                                     text: "Money Charged\n[Supplements]"
                                     font.family: "Roboto"
-                                    font.pixelSize: 40
-                                    color: "#0FE6EF"
+                                    font.pixelSize: 38
+                                    color: "white"
                                 }
                             }
 
@@ -200,26 +225,28 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: 20
                                 height: 60
-                                width: numText_row2_right.width + unitText_row2_right.width + 16
+                                width: moneyChargedSupplements_value.width
+                                       + moneyChargedSupplements_unit.width + 16
 
                                 Text {
-                                    id: unitText_row2_right
+                                    id: moneyChargedSupplements_unit
                                     text: "AED"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 52
+                                    font.pixelSize: 45
                                     color: "white"
                                     anchors.right: parent.right
-                                    anchors.baseline: numText_row2_right.baseline
+                                    anchors.baseline: moneyChargedSupplements_value.baseline
                                 }
 
                                 Text {
-                                    id: numText_row2_right
-                                    text: "25.000"
+                                    id: moneyChargedSupplements_value
+                                    text: typeof appCore !== 'undefined'
+                                          && appCore.moneyChargedSupplements ? appCore.moneyChargedSupplements : fallbackMoneyChargedSupplements
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 62
+                                    font.pixelSize: 55
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
-                                    anchors.right: unitText_row2_right.left
+                                    anchors.right: moneyChargedSupplements_unit.left
                                     anchors.rightMargin: 8
                                 }
                             }
@@ -227,7 +254,6 @@ Item {
                     }
                 }
 
-                // Rows 3 and 4 stay the same as before
                 // Row 3
                 Row {
                     width: parent.width
@@ -240,11 +266,11 @@ Item {
                         height: 124
                         radius: 2
                         border.width: 2
-                        border.color: "#117BB1"
+                        border.color: "white"
                         color: "transparent"
 
                         Rectangle {
-                            id: frame1568_row3_left
+                            id: hiredDistance_box
                             width: 777.14
                             height: 63.3
                             anchors.centerIn: parent
@@ -257,7 +283,7 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/distance.png"
+                                    source: "qrc:/images/distance(light).png"
                                     width: 52.536
                                     height: 46.744
                                 }
@@ -265,8 +291,8 @@ Item {
                                 Text {
                                     text: "Distance Traveled\nWhen Hired"
                                     font.family: "Roboto"
-                                    font.pixelSize: 40
-                                    color: "#0FE6EF"
+                                    font.pixelSize: 38
+                                    color: "white"
                                 }
                             }
 
@@ -275,26 +301,27 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: 20
                                 height: 60
-                                width: numText_row3_left.width + unitText_row3_left.width + 16
+                                width: hiredDistance_value.width + hiredDistance_unit.width + 16
 
                                 Text {
-                                    id: unitText_row3_left
-                                    text: "KM"
+                                    id: hiredDistance_unit
+                                    text: "km"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 52
+                                    font.pixelSize: 45
                                     color: "white"
                                     anchors.right: parent.right
-                                    anchors.baseline: numText_row3_left.baseline
+                                    anchors.baseline: hiredDistance_value.baseline
                                 }
 
                                 Text {
-                                    id: numText_row3_left
-                                    text: "500"
+                                    id: hiredDistance_value
+                                    text: typeof appCore !== 'undefined'
+                                          && appCore.totalizerDistanceHired ? appCore.totalizerDistanceHired : fallbackHiredDistance
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 62
+                                    font.pixelSize: 55
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
-                                    anchors.right: unitText_row3_left.left
+                                    anchors.right: hiredDistance_unit.left
                                     anchors.rightMargin: 8
                                 }
                             }
@@ -307,11 +334,11 @@ Item {
                         height: 124
                         radius: 2
                         border.width: 2
-                        border.color: "#117BB1"
+                        border.color: "white"
                         color: "transparent"
 
                         Rectangle {
-                            id: frame1568_row3_right
+                            id: moneyChargedFare_box
                             width: 777.14
                             height: 63.3
                             anchors.centerIn: parent
@@ -324,7 +351,7 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/money.png"
+                                    source: "qrc:/images/money(light).png"
                                     width: 51.8
                                     height: 28.76
                                 }
@@ -332,8 +359,8 @@ Item {
                                 Text {
                                     text: "Money Charged\n[Fare]"
                                     font.family: "Roboto"
-                                    font.pixelSize: 40
-                                    color: "#0FE6EF"
+                                    font.pixelSize: 38
+                                    color: "white"
                                 }
                             }
 
@@ -342,26 +369,28 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: 20
                                 height: 60
-                                width: numText_row3_right.width + unitText_row3_right.width + 16
+                                width: moneyChargedFare_value.width
+                                       + moneyChargedFare_unit.width + 16
 
                                 Text {
-                                    id: unitText_row3_right
+                                    id: moneyChargedFare_unit
                                     text: "AED"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 52
+                                    font.pixelSize: 45
                                     color: "white"
                                     anchors.right: parent.right
-                                    anchors.baseline: numText_row3_right.baseline
+                                    anchors.baseline: moneyChargedFare_value.baseline
                                 }
 
                                 Text {
-                                    id: numText_row3_right
-                                    text: "55.000"
+                                    id: moneyChargedFare_value
+                                    text: typeof appCore !== 'undefined'
+                                          && appCore.totalizerFare ? appCore.totalizerFare : fallbackMoneyChargedFare
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 62
+                                    font.pixelSize: 55
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
-                                    anchors.right: unitText_row3_right.left
+                                    anchors.right: moneyChargedFare_unit.left
                                     anchors.rightMargin: 8
                                 }
                             }
@@ -381,11 +410,11 @@ Item {
                         height: 124
                         radius: 2
                         border.width: 2
-                        border.color: "#117BB1"
+                        border.color: "white"
                         color: "transparent"
 
                         Rectangle {
-                            id: frame1568_row4_left
+                            id: taxiDistance_box
                             width: 777.14
                             height: 63.3
                             anchors.centerIn: parent
@@ -398,7 +427,7 @@ Item {
 
                                 Image {
                                     anchors.verticalCenter: parent.verticalCenter
-                                    source: "qrc:/images/distancebytaxi.png"
+                                    source: "qrc:/images/distancebytaxi(light).png"
                                     width: 57.5
                                     height: 43.7
                                 }
@@ -407,7 +436,7 @@ Item {
                                     text: "Distance Traveled By\nThe Taxi"
                                     font.family: "Roboto"
                                     font.pixelSize: 40
-                                    color: "#0FE6EF"
+                                    color: "white"
                                 }
                             }
 
@@ -416,34 +445,32 @@ Item {
                                 anchors.right: parent.right
                                 anchors.rightMargin: 20
                                 height: 60
-                                width: numText_row4_left.width + unitText_row4_left.width + 16
+                                width: taxiDistance_value.width + taxiDistance_unit.width + 16
 
                                 Text {
-                                    id: unitText_row4_left
-                                    text: "KM"
+                                    id: taxiDistance_unit
+                                    text: "km"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 52
+                                    font.pixelSize: 45
                                     color: "white"
                                     anchors.right: parent.right
-                                    anchors.baseline: numText_row4_left.baseline
+                                    anchors.baseline: taxiDistance_value.baseline
                                 }
 
                                 Text {
-                                    id: numText_row4_left
-                                    text: "700"
+                                    id: taxiDistance_value
+                                    text: typeof appCore !== 'undefined'
+                                          && appCore.totalizerDistance ? appCore.totalizerDistance : fallbackTaxiDistance
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 62
+                                    font.pixelSize: 55
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
-                                    anchors.right: unitText_row4_left.left
+                                    anchors.right: taxiDistance_unit.left
                                     anchors.rightMargin: 8
                                 }
                             }
                         }
                     }
-
-                    // Right Rectangle
-                    // (Add your content here if needed)
                 }
             }
         }
@@ -465,12 +492,12 @@ Item {
     function show() {
         visible = true
         opacity = 1
-        popupRect.y = totalizer.height - popupRect.height - 118
+        popupRect.y = (totalizer.height - popupRect.height) / 2
     }
 
     function hide() {
         popupRect.y = totalizer.height
-        opacity = 1
+        opacity = 0
         hideTimer.start()
     }
 }

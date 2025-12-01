@@ -1,640 +1,691 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtGraphicalEffects 1.15
 
 Item {
     id: stoppedPanel
-    width: 1122
-    height: 596
+    width: 785
+    height: 569
     visible: true
-    anchors.left: parent ? parent.left : undefined
+    anchors.left: parent.left
     anchors.leftMargin: 52
-    anchors.top: parent ? parent.top : undefined
+    anchors.top: parent.top
+
     z: 20
 
-    // Context property: appCore (set from C++)
-    property string extrasValue: "10.00" // optional static extra value
+    property string totalValue: "0028.10"
+    property string extrasValue: "10.00"
+    property string fareValue: (appCore
+                                && appCore.fare) ? String(appCore.fare) : "0.00"
+    property string distanceValue: (appCore
+                                    && appCore.tripDistance) ? String(
+                                                                   appCore.tripDistance) : "0.000"
+    property string durationValue: (appCore
+                                    && appCore.tripTime) ? String(
+                                                               appCore.tripTime) : "00:00:00"
+    property string startTimeValue: (appCore
+                                     && appCore.tripStartTime) ? String(
+                                                                     appCore.tripStartTime) : "--:--:--"
+    property string startMeridiem: (appCore
+                                    && appCore.tripStartMeridiem) ? String(
+                                                                        appCore.tripStartMeridiem) : ""
+    property string endTimeValue: (appCore
+                                   && appCore.tripStopTime) ? String(
+                                                                  appCore.tripStopTime) : "--:--:--"
+    property string endMeridiem: (appCore
+                                  && appCore.tripStopMeridiem) ? String(
+                                                                     appCore.tripStopMeridiem) : ""
 
     Rectangle {
+        id: panelBackground
         anchors.fill: parent
         anchors.rightMargin: 0
         anchors.bottomMargin: 0
         anchors.leftMargin: 0
         anchors.topMargin: -40
         radius: 40
-        color: Qt.rgba(1 / 255, 2 / 255, 25 / 255, 0.75)
+        color: Qt.rgba(0, 0.49, 0.60, 0.68)
         clip: true
+
+        // --- Dismiss MouseArea ---
+        MouseArea {
+            id: dismissArea
+            anchors.fill: parent
+            visible: paymentBox.dropdownVisible
+            onClicked: {
+                if (paymentBox.dropdownVisible) {
+                    paymentBox.dropdownVisible = false
+                }
+            }
+        }
 
         Rectangle {
             id: stoppedIndicator
             width: 205
             height: 52
-            radius: 4
+            radius: 6
             color: "#CB0615"
             anchors.left: parent.left
             anchors.leftMargin: 25
             anchors.top: parent.top
-            anchors.topMargin: 76
+            anchors.topMargin: 58 + 20
 
             Text {
                 anchors.centerIn: parent
                 text: "STOPPED"
                 color: "white"
-                font.family: fontMain
-                font.pixelSize: 28
+                font.family: "Encode Sans"
+                font.pixelSize: 30
                 font.weight: Font.Bold
             }
         }
 
         Rectangle {
-            id: totalimage
-            radius: 20
-            color: Qt.rgba(15 / 255, 230 / 255, 239 / 255, 0.3)
-            width: 394
-            height: 124
-            anchors.left: parent.left
-            anchors.leftMargin: -20
-            anchors.top: stoppedIndicator.bottom
-            anchors.topMargin: 40
-        }
-        // TOTAL BOX
-        Rectangle {
-            id: totalBox
-            width: 400
-            height: 110
+            id: totalimage_bg
+            radius: 12
             color: "transparent"
+            width: 384
+            height: 130
+            anchors.left: parent.left
+            anchors.leftMargin: -10
+            anchors.top: stoppedIndicator.bottom
+            anchors.topMargin: 28
+
+            LinearGradient {
+                anchors.fill: parent
+                anchors.leftMargin: 8
+                start: Qt.point(0, parent.height / 2)
+                end: Qt.point(parent.width, parent.height / 2)
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0.0
+                        color: "#007D99"
+                    }
+                    GradientStop {
+                        position: 1.0
+                        color: "transparent"
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            id: leftRect
+            width: 400
             anchors.left: parent.left
             anchors.leftMargin: 36
             anchors.top: stoppedIndicator.bottom
-            anchors.topMargin: 32
+            anchors.topMargin: 42
+            color: "transparent"
 
-            // CONTAINER FOR ICON + LABEL + VALUE
-            Item {
-                id: totalContainer
-                anchors.fill: parent // container fills the totalBox
+            Rectangle {
+                id: totalBox
+                width: parent.width
+                height: 110
+                color: "transparent"
 
-                // HEADER (icon + "Total" label)
-                Rectangle {
+                Row {
                     id: totalHeader
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    color: "transparent"
+                    spacing: 6
                     anchors.left: parent.left
                     anchors.leftMargin: -10
                     anchors.top: parent.top
                     anchors.topMargin: 10
-
                     Image {
-                        id: totalIcon
-                        width: 20
-                        height: 28
+                        width: 26
+                        height: 34
                         source: "qrc:/images/total_icon.png"
-                        anchors.left: parent.left
-                        anchors.top: parent.top
-                        anchors.topMargin: 8
                     }
                     Text {
                         text: "Total"
-                        font.family: fontMain
-                        font.pixelSize: 24
+                        font.family: "Montserrat"
+                        font.pixelSize: 20
                         font.weight: Font.DemiBold
                         color: "white"
-                        anchors.left: totalIcon.right
-                        anchors.leftMargin: 10
-                        anchors.verticalCenter: totalIcon.verticalCenter
                     }
                 }
 
-                // TOTAL AMOUNT BOX (invisible)
-                Rectangle {
-                    id: totalAmountBox
-                    width: 238
-                    height: 78
-                    color: "transparent"
+                Row {
+                    spacing: 6
                     anchors.left: parent.left
-
+                    anchors.leftMargin: -10
                     anchors.top: totalHeader.bottom
-                    anchors.topMargin: 13
+                    anchors.topMargin: 4
                     Text {
                         id: totalVal
-                        text: (appCore
-                               && appCore.fare) ? (Number(
-                                                       appCore.fare) + Number(
-                                                       extrasValue)).toFixed(
-                                                      2).padStart(
-                                                      7, '0') : "0000.00"
-                        font.family: fontMain
+                        text: totalValue
+                        font.family: "Ubuntu"
                         font.pixelSize: 62
-                        anchors.verticalCenterOffset: 0
-                        anchors.horizontalCenterOffset: -20
                         font.bold: true
                         color: "white"
-                        anchors.left: parent.left
-                        anchors.margins: -8
+                    }
+                    Text {
+                        id: totalUnit
+                        text: "AED"
+                        font.family: "Montserrat"
+                        font.pixelSize: 16
+                        color: "white"
+                        anchors.baseline: totalVal.baseline
                     }
                 }
-
-                // UNIT outside the box (still part of container)
-                Text {
-                    id: totalUnit
-                    x: 249
-                    text: "AED"
-                    font.family: fontUnit
-                    font.pixelSize: 20
-                    anchors.verticalCenterOffset: 20
-                    color: "white"
-                    opacity: .8
-                    anchors.verticalCenter: totalAmountBox.verticalCenter
-                }
             }
-        }
 
-        // FARE BOX
-        Rectangle {
-            id: fareBox
-            width: 374
-            height: 93
-            color: "transparent"
-            anchors.left: parent.left
-            anchors.leftMargin: 0
-            anchors.top: totalBox.bottom
-            anchors.topMargin: 25
-
-            // Icon and Label
             Rectangle {
-                width: childrenRect.width
-                height: childrenRect.height
+                id: fareBox
+                width: parent.width
+                height: 70
+                anchors.top: totalBox.bottom
+                anchors.topMargin: 14
                 color: "transparent"
-                anchors.left: parent.left
-                anchors.leftMargin: 38
-                anchors.top: parent.top
-                anchors.topMargin: 25
 
-                Image {
-                    id: fareIcon
-                    width: 26
-                    height: 14
-                    source: "qrc:/images/fare_icon.png"
+                Row {
+                    spacing: 10
                     anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.topMargin: 12
+                    Image {
+                        width: 26
+                        height: 14
+                        source: "qrc:/images/fare_icon.png"
+                    }
+                    Text {
+                        text: "FARE"
+                        font.family: "Montserrat"
+                        font.pixelSize: 20
+                        font.weight: Font.DemiBold
+                        color: "white"
+                    }
                 }
-                Text {
-                    text: "FARE"
-                    font.family: fontMain
-                    font.pixelSize: 20
-                    font.weight: Font.DemiBold
-                    color: "white"
-                    anchors.left: fareIcon.right
-                    anchors.leftMargin: 12
-                    anchors.verticalCenter: fareIcon.verticalCenter
-                }
-            }
-
-            // Value and Unit
-            Rectangle {
-                width: childrenRect.width
-                height: childrenRect.height
-                color: "transparent"
-                anchors.left: parent.left
-                anchors.leftMargin: 10
-                anchors.top: parent.top
-                anchors.topMargin: 45
-
                 Text {
                     id: fareVal
-                    text: appCore ? appCore.fare : "0.000"
-                    font.family: fontMain
+                    x: 36
+                    y: 40
+                    text: fareValue
+                    font.family: "Ubuntu"
                     font.pixelSize: 32
                     font.bold: true
                     color: "white"
-                    anchors.left: parent.left
-                    anchors.leftMargin: 63
                 }
-
                 Text {
                     id: fareUnit
                     text: "AED"
-                    font.family: fontUnit
+                    font.family: "Montserrat"
                     font.pixelSize: 16
                     color: "white"
-                    opacity: .8
-                    anchors.left: fareVal.right
-                    anchors.leftMargin: 5
-                    anchors.baseline: fareVal.baseline
-                    anchors.baselineOffset: 5
+                    x: fareVal.x + fareVal.paintedWidth + 6
+                    y: fareVal.y + fareVal.baselineOffset - fareUnit.baselineOffset + 6
                 }
             }
-        }
 
-        // EXTRAS BOX
-        Rectangle {
-            id: extrasBox
-            width: 374
-            height: 93
-            color: "transparent"
-            anchors.left: parent.left
-            anchors.leftMargin: 0
-            anchors.top: fareBox.bottom
-
-            // Icon and Label
             Rectangle {
-                width: childrenRect.width
-                height: childrenRect.height
+                id: extrasBox
+                width: parent.width
+                height: 70
+                anchors.top: fareBox.bottom
+                anchors.topMargin: 26
                 color: "transparent"
-                anchors.left: parent.left
-                anchors.leftMargin: 38
-                anchors.top: parent.top
-                anchors.topMargin: 25
 
-                Image {
-                    id: extrasIcon
-                    width: 26
-                    height: 26
-                    source: "qrc:/images/extras_icon.png"
+                Row {
+                    spacing: 10
                     anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.topMargin: 12
+                    Image {
+                        width: 26
+                        height: 26
+                        source: "qrc:/images/extras_icon.png"
+                    }
+                    Text {
+                        text: "EXTRAS"
+                        font.family: "Montserrat"
+                        font.pixelSize: 20
+                        font.weight: Font.DemiBold
+                        color: "white"
+                    }
                 }
-                Text {
-                    text: "EXTRAS"
-                    font.family: fontMain
-                    font.pixelSize: 22
-                    font.weight: Font.DemiBold
-                    color: "white"
-                    anchors.left: extrasIcon.right
-                    anchors.leftMargin: 10
-                    anchors.verticalCenter: extrasIcon.verticalCenter
-                }
-            }
-
-            // Value and Unit
-            Rectangle {
-                width: childrenRect.width
-                height: childrenRect.height
-                color: "transparent"
-                anchors.left: parent.left
-                anchors.leftMargin: 74
-                anchors.top: parent.top
-                anchors.topMargin: 45
-
                 Text {
                     id: extraVal
+                    x: 36
+                    y: 40
                     text: extrasValue
-                    font.family: fontMain
+                    font.family: "Ubuntu"
                     font.pixelSize: 32
-                    anchors.leftMargin: 10
-
                     font.bold: true
                     color: "white"
                 }
-
                 Text {
                     id: extrasUnit
                     text: "AED"
-                    font.family: fontUnit
+                    font.family: "Montserrat"
                     font.pixelSize: 16
                     color: "white"
-                    opacity: .8
-                    anchors.left: extraVal.right
-                    anchors.leftMargin: 6
-                    anchors.baseline: extraVal.baseline
-                    anchors.baselineOffset: 5
+                    x: extraVal.x + extraVal.paintedWidth + 6
+                    y: extraVal.y + extraVal.baselineOffset - extrasUnit.baselineOffset + 6
                 }
             }
-        }
 
-        // DISTANCE BOX
-        Rectangle {
-            id: distBox
-            width: 374
-            height: 93
-            color: "transparent"
-            anchors.left: parent.left
-            anchors.leftMargin: 0
-            anchors.top: extrasBox.bottom
-
-            // Icon and Label
             Rectangle {
-                width: childrenRect.width
-                height: childrenRect.height
+                id: distBox
+                width: parent.width
+                height: 70
+                anchors.top: extrasBox.bottom
+                anchors.topMargin: 26
                 color: "transparent"
-                anchors.left: parent.left
-                anchors.leftMargin: 38
-                anchors.top: parent.top
-                anchors.topMargin: 25
 
-                Image {
-                    id: distIcon
-                    width: 24
-                    height: 14
-                    source: "qrc:/images/street_icon.png"
+                Row {
+                    spacing: 10
                     anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.topMargin: 16
+                    Image {
+                        width: 26
+                        height: 18
+                        source: "qrc:/images/street_icon.png"
+                    }
+                    Text {
+                        text: "DISTANCE"
+                        font.family: "Montserrat"
+                        font.pixelSize: 20
+                        font.weight: Font.DemiBold
+                        color: "white"
+                    }
                 }
-                Text {
-                    text: "DISTANCE"
-                    font.family: fontMain
-                    font.pixelSize: 22
-                    font.weight: Font.DemiBold
-                    color: "white"
-                    anchors.left: distIcon.right
-                    anchors.leftMargin: 10
-                    anchors.verticalCenter: distIcon.verticalCenter
-                }
-            }
-
-            // Value and Unit
-            Rectangle {
-                width: childrenRect.width
-                height: childrenRect.height
-                color: "transparent"
-                anchors.left: parent.left
-                anchors.leftMargin: 74
-                anchors.top: parent.top
-                anchors.topMargin: 45
-
                 Text {
                     id: distVal
-                    text: appCore ? appCore.tripDistance : "0.000"
-                    font.family: fontMain
+                    x: 36
+                    y: 40
+                    text: distanceValue
+                    font.family: "Ubuntu"
                     font.pixelSize: 32
-                    anchors.leftMargin: 10
                     font.bold: true
                     color: "white"
                 }
-
                 Text {
                     id: distUnit
                     text: "KM"
-                    font.family: fontUnit
+                    font.family: "Montserrat"
                     font.pixelSize: 16
                     color: "white"
-                    opacity: .8
-
-                    anchors.left: distVal.right
-                    anchors.leftMargin: 6
-                    anchors.baseline: distVal.baseline
-                    anchors.baselineOffset: 5
+                    x: distVal.x + distVal.paintedWidth + 6
+                    y: distVal.y + distVal.baselineOffset - distUnit.baselineOffset + 6
                 }
             }
         }
 
-        // RIGHT SIDE CONTAINER FOR DURATION, START TIME, END TIME
+        Column {
+            id: verticalLines
+            x: 374
+            anchors.top: leftRect.top
+            spacing: 20
+            Rectangle {
+                width: 1
+                height: 10.25
+                color: "white"
+                opacity: 0.4
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+            Repeater {
+                model: 8
+                Rectangle {
+                    width: 1
+                    height: 20.25
+                    color: "white"
+                    opacity: 0.4
+                    anchors.horizontalCenter: parent.horizontalCenter
+                }
+            }
+            Rectangle {
+                width: 1
+                height: 10.25
+                color: "white"
+                opacity: 0.4
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+        }
+
         Rectangle {
-            id: timeInfoBox
-            width: 374
-            height: 372
+            id: rightRect
+            width: 360
+            anchors.left: leftRect.right
+            anchors.leftMargin: 2
+            anchors.top: stoppedIndicator.bottom
+            anchors.topMargin: 42
             color: "transparent"
-            anchors.left: totalimage.right
-            anchors.top: totalimage.bottom
-            anchors.leftMargin: 0
-            anchors.topMargin: -93
-            // === DURATION BOX ===
+            y: leftRect.y - stoppedIndicator.bottom
+               - stoppedPanel.anchors.topMargin + leftRect.anchors.topMargin
+
             Rectangle {
                 id: durBox
-                width: 374
-                height: 93
+                width: parent.width
+                height: 60
                 color: "transparent"
-                anchors.top: parent.top
-
-                // Icon + Label
-                Rectangle {
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    color: "transparent"
+                Row {
+                    spacing: 10
                     anchors.left: parent.left
-                    anchors.leftMargin: 38
                     anchors.top: parent.top
-                    anchors.topMargin: 25
-
+                    anchors.topMargin: 12
                     Image {
-                        id: durationIcon
                         width: 28
                         height: 28
                         source: "qrc:/images/duration_icon.png"
-                        anchors.left: parent.left
                     }
                     Text {
                         text: "DURATION"
-                        font.family: fontMain
+                        color: "white"
+                        font.family: "Montserrat"
                         font.pixelSize: 20
                         font.weight: Font.DemiBold
-                        color: "white"
-                        anchors.left: durationIcon.right
-                        anchors.leftMargin: 10
-                        anchors.verticalCenter: durationIcon.verticalCenter
                     }
                 }
-
-                // Value + Unit
-                Rectangle {
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    color: "transparent"
-                    anchors.left: parent.left
-                    anchors.leftMargin: 74
-                    anchors.top: parent.top
-                    anchors.topMargin: 47
-
-                    Text {
-                        id: durationVal
-                        text: appCore ? appCore.tripTime : "00:00:00"
-                        font.family: fontMain
-                        font.pixelSize: 32
-                        font.bold: true
-                        color: "white"
-                    }
-
-                    Text {
-                        id: durationUnit
-                        text: "Hr"
-                        font.family: fontUnit
-                        font.pixelSize: 16
-                        color: "white"
-                        opacity: .8
-                        anchors.left: durationVal.right
-                        anchors.leftMargin: 6
-                        anchors.baseline: durationVal.baseline
-                        anchors.baselineOffset: 5
-                    }
+                Text {
+                    id: durationVal
+                    x: 36
+                    y: 40
+                    text: durationValue
+                    font.family: "Ubuntu"
+                    font.pixelSize: 32
+                    font.bold: true
+                    color: "white"
+                }
+                Text {
+                    id: durationUnit
+                    text: "Hr"
+                    font.family: "Montserrat"
+                    font.pixelSize: 16
+                    color: "white"
+                    x: durationVal.x + durationVal.paintedWidth + 6
+                    y: durationVal.y + durationVal.baselineOffset - durationUnit.baselineOffset + 6
                 }
             }
 
-            // === START TIME BOX ===
             Rectangle {
                 id: startBox
-                width: 374
-                height: 93
-                color: "transparent"
+                width: parent.width
+                height: 60
                 anchors.top: durBox.bottom
-
-                // Icon + Label
-                Rectangle {
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    color: "transparent"
+                anchors.topMargin: 26
+                color: "transparent"
+                Row {
+                    spacing: 10
                     anchors.left: parent.left
-                    anchors.leftMargin: 38
                     anchors.top: parent.top
-                    anchors.topMargin: 25
-
+                    anchors.topMargin: 12
                     Image {
-                        id: startTimeIcon
                         width: 28
                         height: 28
                         source: "qrc:/images/start_time_icon.png"
-                        anchors.left: parent.left
                     }
                     Text {
                         text: "START TIME"
-                        font.family: fontMain
+                        color: "white"
+                        font.family: "Montserrat"
                         font.pixelSize: 20
                         font.weight: Font.DemiBold
-                        color: "white"
-                        anchors.left: startTimeIcon.right
-                        anchors.leftMargin: 10
-                        anchors.verticalCenter: startTimeIcon.verticalCenter
                     }
                 }
-
-                // Value + Unit
-                Rectangle {
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    color: "transparent"
-                    anchors.left: parent.left
-                    anchors.leftMargin: 74
-                    anchors.top: parent.top
-                    anchors.topMargin: 47
-
-                    Text {
-                        id: startVal
-                        text: appCore ? appCore.tripStartTime : "--:--:--"
-                        font.family: fontMain
-                        font.pixelSize: 32
-                        font.bold: true
-                        color: "white"
-                    }
-
-                    Text {
-                        id: startUnit
-                        text: appCore ? appCore.tripStartMeridiem : ""
-                        font.family: fontUnit
-                        font.pixelSize: 16
-                        color: "white"
-                        opacity: .8
-                        anchors.left: startVal.right
-                        anchors.leftMargin: 6
-                        anchors.baseline: startVal.baseline
-                        anchors.baselineOffset: 5
-                    }
+                Text {
+                    id: startVal
+                    x: 36
+                    y: 40
+                    text: startTimeValue
+                    font.family: "Ubuntu"
+                    font.pixelSize: 32
+                    font.bold: true
+                    color: "white"
+                }
+                Text {
+                    id: startUnit
+                    text: startMeridiem
+                    font.family: "Montserrat"
+                    font.pixelSize: 16
+                    color: "white"
+                    x: startVal.x + startVal.paintedWidth + 6
+                    y: startVal.y + startVal.baselineOffset - startUnit.baselineOffset + 6
                 }
             }
 
-            // === END TIME BOX ===
             Rectangle {
-
                 id: endBox
-                width: 374
-                height: 93
-                color: "transparent"
+                width: parent.width
+                height: 60
                 anchors.top: startBox.bottom
-
-                // Icon + Label
-                Rectangle {
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    color: "transparent"
+                anchors.topMargin: 26
+                color: "transparent"
+                Row {
+                    spacing: 10
                     anchors.left: parent.left
-                    anchors.leftMargin: 38
                     anchors.top: parent.top
-                    anchors.topMargin: 25
-
+                    anchors.topMargin: 12
                     Image {
-                        id: endTimeIcon
                         width: 28
                         height: 28
                         source: "qrc:/images/end_time_icon.png"
-                        anchors.left: parent.left
                     }
                     Text {
                         text: "END TIME"
-                        font.family: fontMain
+                        color: "white"
+                        font.family: "Montserrat"
                         font.pixelSize: 20
                         font.weight: Font.DemiBold
-                        color: "white"
-                        anchors.left: endTimeIcon.right
-                        anchors.leftMargin: 10
-                        anchors.verticalCenter: endTimeIcon.verticalCenter
                     }
                 }
-
-                // Value + Unit
-                Rectangle {
-                    width: childrenRect.width
-                    height: childrenRect.height
-                    color: "transparent"
-                    anchors.left: parent.left
-                    anchors.leftMargin: 76
-
-                    anchors.top: parent.top
-                    anchors.topMargin: 47
-
-                    Text {
-                        id: endVal
-                        text: appCore ? appCore.tripStopTime : "--:--:--"
-                        font.family: fontMain
-                        font.pixelSize: 32
-                        font.bold: true
-                        color: "white"
-                    }
-
-                    Text {
-                        id: endUnit
-                        text: appCore ? appCore.tripStopMeridiem : ""
-                        font.family: fontUnit
-                        font.pixelSize: 16
-                        color: "white"
-                        opacity: .8
-                        anchors.left: endVal.right
-                        anchors.leftMargin: 6
-                        anchors.baseline: endVal.baseline
-                        anchors.baselineOffset: 5
-                    }
+                Text {
+                    id: endVal
+                    x: 36
+                    y: 40
+                    text: endTimeValue
+                    font.family: "Ubuntu"
+                    font.pixelSize: 32
+                    font.bold: true
+                    color: "white"
+                }
+                Text {
+                    id: endUnit
+                    text: endMeridiem
+                    font.family: "Montserrat"
+                    font.pixelSize: 16
+                    color: "white"
+                    x: endVal.x + endVal.paintedWidth + 6
+                    y: endVal.y + endVal.baselineOffset - endUnit.baselineOffset + 6
                 }
             }
 
-            // === VERTICAL LINE SERIES ===
-            Column {
-                id: verticalLines
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-                anchors.top: parent.top
-                spacing: 20
+            Rectangle {
+                id: paymentBox
+                width: parent.width
+                height: 230
+                anchors.top: endBox.bottom
+                anchors.topMargin: 26
+                color: "transparent"
+                z: 10
 
-                // Top short line
-                Rectangle {
-                    width: 1
-                    height: 10.25
-                    color: "white"
-                    opacity: 0.4
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
+                property string selectedMethod: "CASH"
+                property bool dropdownVisible: false
 
-                // Repeated long lines
-                Repeater {
-                    model: 8
-                    Rectangle {
-                        width: 1
-                        height: 20.25
+                Row {
+                    spacing: 10
+                    anchors.left: parent.left
+                    anchors.top: parent.top
+                    anchors.topMargin: 12
+                    Image {
+                        width: 24
+                        height: 17.05
+                        source: "qrc:/images/credit-card.png"
+                    }
+                    Text {
+                        text: "PAYMENT METHOD"
                         color: "white"
-                        opacity: 0.4
-                        anchors.horizontalCenter: parent.horizontalCenter
+                        font.family: "Montserrat"
+                        font.pixelSize: 20
+                        font.weight: Font.Bold
                     }
                 }
 
-                // Bottom short line
+                // **Dropdown Box (methodsBox)**
                 Rectangle {
-                    width: 1
-                    height: 10.25
-                    color: "white"
-                    opacity: 0.4
-                    anchors.horizontalCenter: parent.horizontalCenter
+                    id: methodsBox
+                    width: 206
+                    height: 48
+                    anchors.top: parent.top
+                    anchors.topMargin: 49
+                    anchors.left: parent.left
+                    anchors.leftMargin: 38
+                    radius: 12
+                    border.color: "white"
+                    border.width: 1
+                    color: Qt.rgba(0, 0.49, 0.60, 0.68)
+                    clip: true
+                    z: 20
+
+                    Column {
+                        id: dropdownContent
+                        width: parent.width
+                        spacing: 0
+
+                        // Item 1: The Currently Selected Method (Toggle)
+                        Rectangle {
+                            id: selectedOption
+                            width: parent.width
+                            height: 48
+                            color: "transparent"
+
+                            // --- NEW HOVER OVERLAY FOR SELECTED OPTION ---
+                            Rectangle {
+                                id: selectedHoverOverlay
+                                anchors.fill: parent
+                                color: Qt.rgba(1, 1, 1,
+                                               0.1) // 10% white overlay
+                                // Visible only when expanded AND hovering this item
+                                visible: toggleMouseArea.containsMouse
+                                         && paymentBox.dropdownVisible
+                            }
+
+                            // ---------------------------------------------
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left
+                                anchors.leftMargin: 12
+                                text: paymentBox.selectedMethod
+                                color: "white"
+                                font.family: "Montserrat"
+                                font.pixelSize: 24
+                                font.weight: Font.DemiBold
+                            }
+
+                            Image {
+                                source: "qrc:/images/dropdown.png"
+                                height: 32
+                                width: 32
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.right: parent.right
+                                anchors.rightMargin: 12
+                                rotation: paymentBox.dropdownVisible ? 180 : 0
+                                Behavior on rotation {
+                                    RotationAnimation {
+                                        duration: 150
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                id: toggleMouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: paymentBox.dropdownVisible = !paymentBox.dropdownVisible
+                            }
+                        }
+
+                        // Item 2: The Alternative Method (Visible when expanded)
+                        Rectangle {
+                            id: alternativeOption
+                            width: parent.width
+                            height: 48
+                            color: "transparent"
+                            visible: paymentBox.dropdownVisible
+
+                            // --- HOVER OVERLAY FOR ALTERNATIVE OPTION ---
+                            Rectangle {
+                                id: hoverOverlay
+                                anchors.fill: parent
+                                color: Qt.rgba(1, 1, 1, 0.1)
+                                visible: alternativeMouseArea.containsMouse
+                            }
+
+                            // --------------------------------------------
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left
+                                anchors.leftMargin: 12
+                                text: (paymentBox.selectedMethod === "CASH") ? "CARD" : "CASH"
+                                color: "white"
+                                font.family: "Montserrat"
+                                font.pixelSize: 24
+                                font.weight: Font.DemiBold
+                            }
+
+                            MouseArea {
+                                id: alternativeMouseArea
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: {
+                                    paymentBox.selectedMethod = (paymentBox.selectedMethod
+                                                                 === "CASH") ? "CARD" : "CASH"
+                                    console.log("Payment method selected:",
+                                                paymentBox.selectedMethod)
+                                    paymentBox.dropdownVisible = false
+                                }
+                            }
+                        }
+                    }
+
+                    states: [
+                        State {
+                            name: "Expanded"
+                            when: paymentBox.dropdownVisible
+                            PropertyChanges {
+                                target: methodsBox
+                                height: 96
+                            }
+                            PropertyChanges {
+                                target: methodsBox
+                                color: Qt.rgba(0, 0.49, 0.60, 0.9)
+                            }
+                        },
+                        State {
+                            name: "CollapsedHovered"
+                            when: !paymentBox.dropdownVisible
+                                  && (toggleMouseArea.pressed
+                                      || toggleMouseArea.containsMouse)
+                            PropertyChanges {
+                                target: methodsBox
+                                color: Qt.rgba(0, 0.49, 0.60, 0.9)
+                            }
+                        },
+                        State {
+                            name: "Collapsed"
+                            when: !paymentBox.dropdownVisible
+                            PropertyChanges {
+                                target: methodsBox
+                                height: 48
+                            }
+                            PropertyChanges {
+                                target: methodsBox
+                                color: Qt.rgba(0, 0.49, 0.60, 0.68)
+                            }
+                        }
+                    ]
+
+                    transitions: Transition {
+                        NumberAnimation {
+                            properties: "height"
+                            duration: 250
+                            easing.type: Easing.OutCubic
+                        }
+                        ColorAnimation {
+                            properties: "color"
+                            duration: 150
+                        }
+                    }
                 }
             }
         }

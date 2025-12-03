@@ -10,11 +10,81 @@ Item {
     opacity: 0
 
     // Fallback variables for appCore values
-    property string fallbackNumberOfJourneys: "25555550"
-    property string fallbackMoneyChargedSupplements: "25555555.00"
-    property string fallbackHiredDistance: "50555550"
-    property string fallbackMoneyChargedFare: "55555555.00"
-    property string fallbackTaxiDistance: "700"
+    property string fallbackNumberOfJourneys: "0"
+    property string fallbackMoneyChargedSupplements: "0.00"
+    property string fallbackHiredDistance: "0"
+    property string fallbackMoneyChargedFare: "0"
+    property string fallbackTaxiDistance: "0"
+
+    // === AUTOCLOSE LOGIC ===
+    property real progressValue: 0 // 0 → 1 in 10 seconds
+    property bool progressActive: false
+    property bool progressFinished: false
+    property real speedValue: 0
+
+    onVisibleChanged: {
+        if (visible) {
+            progressValue = 0
+            progressActive = true
+            progressFinished = false
+            autoCloseTimer.start()
+
+            speedValue = Number(appCore.speed) // read initial speed
+        } else {
+            progressActive = false
+            autoCloseTimer.stop()
+        }
+    }
+
+    Timer {
+        id: autoCloseTimer
+        interval: 100 // update every 100 ms
+        repeat: true
+
+        onTriggered: {
+            if (!totalizer.progressActive)
+                return
+
+            totalizer.progressValue += 0.01 // 0.01 × 100ms × 100 = 10s
+
+            if (totalizer.progressValue > 1.0)
+                totalizer.progressValue = 1.0
+
+            // When finished
+            if (totalizer.progressValue >= 1.0) {
+                totalizer.progressActive = false
+                totalizer.progressFinished = true
+                autoCloseTimer.stop()
+
+                totalizer.speedValue = Number(appCore.speed)
+                if (totalizer.speedValue > 0) {
+                    console.log("Totalizer auto-hide (progress 100% and speed > 0)")
+                    totalizer.hide()
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: appCore
+
+        function onSpeedChanged() {
+            if (!totalizer.visible)
+                return
+
+            if (!totalizer.progressFinished)
+                return
+
+            // only check AFTER countdown
+            var v = Number(appCore.speed)
+            totalizer.speedValue = v
+
+            if (v > 0) {
+                console.log("Totalizer auto-hide (speed became > 0 after progress finished)")
+                totalizer.hide()
+            }
+        }
+    }
 
     Timer {
         id: hideTimer
@@ -116,7 +186,7 @@ Item {
                                 font.family: "Roboto"
                                 font.pixelSize: 40
                                 color: "white"
-                                font.bold: true
+                                font.weight: Font.Medium
                             }
                         }
                     }
@@ -158,8 +228,9 @@ Item {
                                 Text {
                                     text: "Number of Journeys"
                                     font.family: "Roboto"
-                                    font.pixelSize: 38
+                                    font.pixelSize: 40
                                     color: "white"
+                                    font.weight: Font.Medium
                                 }
                             }
 
@@ -172,13 +243,14 @@ Item {
 
                                 Text {
                                     id: numberOfJourneys_value
-                                    text: typeof appCore !== 'undefined'
-                                          && appCore.numberOfJourneys ? appCore.numberOfJourneys : fallbackNumberOfJourneys
+                                    text: appCore.totalizerNumberOfJourneys
+                                          || fallbackNumberOfJourneys
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 55
+                                    font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.right: parent.right
+                                    font.weight: Font.Bold
                                 }
                             }
                         }
@@ -213,10 +285,11 @@ Item {
                                 }
 
                                 Text {
-                                    text: "Money Charged\n[Supplements]"
+                                    text: "Extras"
                                     font.family: "Roboto"
-                                    font.pixelSize: 38
+                                    font.pixelSize: 40
                                     color: "white"
+                                    font.weight: Font.Medium
                                 }
                             }
 
@@ -232,10 +305,11 @@ Item {
                                     id: moneyChargedSupplements_unit
                                     text: "AED"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 45
+                                    font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
                                     anchors.baseline: moneyChargedSupplements_value.baseline
+                                    font.weight: Font.Bold
                                 }
 
                                 Text {
@@ -243,11 +317,12 @@ Item {
                                     text: typeof appCore !== 'undefined'
                                           && appCore.moneyChargedSupplements ? appCore.moneyChargedSupplements : fallbackMoneyChargedSupplements
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 55
+                                    font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.right: moneyChargedSupplements_unit.left
                                     anchors.rightMargin: 8
+                                    font.weight: Font.Bold
                                 }
                             }
                         }
@@ -289,10 +364,11 @@ Item {
                                 }
 
                                 Text {
-                                    text: "Distance Traveled\nWhen Hired"
+                                    text: "Hired Distance"
                                     font.family: "Roboto"
-                                    font.pixelSize: 38
+                                    font.pixelSize: 40
                                     color: "white"
+                                    font.weight: Font.Medium
                                 }
                             }
 
@@ -307,10 +383,11 @@ Item {
                                     id: hiredDistance_unit
                                     text: "km"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 45
+                                    font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
                                     anchors.baseline: hiredDistance_value.baseline
+                                    font.weight: Font.Bold
                                 }
 
                                 Text {
@@ -318,11 +395,12 @@ Item {
                                     text: typeof appCore !== 'undefined'
                                           && appCore.totalizerDistanceHired ? appCore.totalizerDistanceHired : fallbackHiredDistance
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 55
+                                    font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.right: hiredDistance_unit.left
                                     anchors.rightMargin: 8
+                                    font.weight: Font.Bold
                                 }
                             }
                         }
@@ -357,10 +435,11 @@ Item {
                                 }
 
                                 Text {
-                                    text: "Money Charged\n[Fare]"
+                                    text: "Fare"
                                     font.family: "Roboto"
-                                    font.pixelSize: 38
+                                    font.pixelSize: 40
                                     color: "white"
+                                    font.weight: Font.Medium
                                 }
                             }
 
@@ -376,10 +455,11 @@ Item {
                                     id: moneyChargedFare_unit
                                     text: "AED"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 45
+                                    font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
                                     anchors.baseline: moneyChargedFare_value.baseline
+                                    font.weight: Font.Bold
                                 }
 
                                 Text {
@@ -387,11 +467,12 @@ Item {
                                     text: typeof appCore !== 'undefined'
                                           && appCore.totalizerFare ? appCore.totalizerFare : fallbackMoneyChargedFare
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 55
+                                    font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.right: moneyChargedFare_unit.left
                                     anchors.rightMargin: 8
+                                    font.weight: Font.Bold
                                 }
                             }
                         }
@@ -433,10 +514,11 @@ Item {
                                 }
 
                                 Text {
-                                    text: "Distance Traveled By\nThe Taxi"
+                                    text: "Total Distance"
                                     font.family: "Roboto"
                                     font.pixelSize: 40
                                     color: "white"
+                                    font.weight: Font.Medium
                                 }
                             }
 
@@ -451,10 +533,11 @@ Item {
                                     id: taxiDistance_unit
                                     text: "km"
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 45
+                                    font.pixelSize: 52
                                     color: "white"
                                     anchors.right: parent.right
                                     anchors.baseline: taxiDistance_value.baseline
+                                    font.weight: Font.Bold
                                 }
 
                                 Text {
@@ -462,11 +545,12 @@ Item {
                                     text: typeof appCore !== 'undefined'
                                           && appCore.totalizerDistance ? appCore.totalizerDistance : fallbackTaxiDistance
                                     font.family: "Roboto Condensed"
-                                    font.pixelSize: 55
+                                    font.pixelSize: 62
                                     color: "white"
                                     anchors.verticalCenter: parent.verticalCenter
                                     anchors.right: taxiDistance_unit.left
                                     anchors.rightMargin: 8
+                                    font.weight: Font.Bold
                                 }
                             }
                         }
@@ -498,6 +582,8 @@ Item {
     function hide() {
         popupRect.y = totalizer.height
         opacity = 0
+        // RESET SCROLL POSITION (The requested change)
+        scrollArea.contentItem.contentY = 0
         hideTimer.start()
     }
 }

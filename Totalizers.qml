@@ -88,7 +88,7 @@ Item {
 
     Timer {
         id: hideTimer
-        interval: 400
+        interval: 400 // Matches info.qml
         repeat: false
         running: false
         onTriggered: totalizer.visible = false
@@ -559,17 +559,31 @@ Item {
             }
         }
 
+        // **MODIFIED BEHAVIORS TO MATCH info.qml**
         Behavior on y {
             NumberAnimation {
-                duration: 500
+                duration: 400
                 easing.type: Easing.OutCubic
             }
         }
 
         Behavior on opacity {
             NumberAnimation {
-                duration: 500
+                duration: 400
             }
+        }
+    }
+
+    Behavior on y {
+        NumberAnimation {
+            duration: 400
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    Behavior on opacity {
+        NumberAnimation {
+            duration: 400
         }
     }
 
@@ -582,8 +596,8 @@ Item {
     function hide() {
         popupRect.y = totalizer.height
         opacity = 0
-        // RESET SCROLL POSITION (The requested change)
         scrollArea.contentItem.contentY = 0
+
         hideTimer.start()
     }
 }

@@ -33,7 +33,6 @@ Item {
     function addEntry(name, changes) {
         var db = getDatabase()
         var d = new Date()
-        // --- CHANGE 1: Used / instead of - ---
         var dateStr = Qt.formatDate(d, "dd/MM/yyyy")
         var timeStr = Qt.formatTime(d, "hh:mm AP")
 
@@ -122,8 +121,9 @@ Item {
     Rectangle {
         id: popupRect
         width: 1859
-        height: 600
-        anchors.centerIn: parent
+        height: 550
+        anchors.top: parent.top
+        anchors.topMargin: 40
         y: parent.height
         radius: 40
         color: Qt.rgba(0 / 255, 125 / 255, 153 / 255, 0.8)
@@ -177,20 +177,27 @@ Item {
                     var h = parent.height * ratio
                     return Math.max(30, h)
                 }
+
                 Connections {
                     target: tableList
                     function onContentYChanged() {
                         if (!dragArea.drag.active) {
                             var listRange = tableList.manualContentHeight - tableList.height
                             var trackRange = sideBar.height - scrollHandle.height
+
                             if (listRange > 0) {
-                                scrollHandle.y = (tableList.contentY / listRange) * trackRange
+                                var calcY = (tableList.contentY / listRange) * trackRange
+                                // === CLAMPING LOGIC FOR SPRING EFFECT ===
+                                scrollHandle.y = Math.max(0,
+                                                          Math.min(trackRange,
+                                                                   calcY))
                             } else {
                                 scrollHandle.y = 0
                             }
                         }
                     }
                 }
+
                 MouseArea {
                     id: dragArea
                     anchors.fill: parent
@@ -341,7 +348,9 @@ Item {
                 height: parent.height - 150
                 clip: true
                 model: viewModel
-                boundsBehavior: Flickable.StopAtBounds
+
+                // === SPRING BUMP EFFECT ===
+                boundsBehavior: Flickable.DragAndOvershootBounds
 
                 property int rowHeightPx: 62
                 property int spacingPx: 0
@@ -352,15 +361,9 @@ Item {
                 flickDeceleration: 1500
                 maximumFlickVelocity: 2500
 
-                onCountChanged: {
-                    var maxScroll = manualContentHeight - height
-                    if (manualContentHeight <= height) {
-                        contentY = 0
-                    } else if (contentY > maxScroll) {
-                        contentY = maxScroll
-                    }
-                }
-
+                // Removed the manual contentY clamping in onCountChanged
+                // because it conflicts with the spring effect when list is small.
+                // If you strictly want it to start at top on refresh, simply use contentY = 0 in refreshData()
                 delegate: Rectangle {
                     width: tableList.width
                     height: tableList.rowHeightPx
@@ -396,8 +399,6 @@ Item {
                         Item {
                             width: parent.width * 0.25
                             height: parent.height
-
-                            // --- CHANGE 2: Removed Image, centered Text directly ---
                             Text {
                                 text: model.date
                                 anchors.centerIn: parent
@@ -442,6 +443,10 @@ Item {
                             var currentPos = tableList.contentY
                             var delta = wheel.angleDelta.y * speedFactor
                             var newPos = currentPos - delta
+
+                            // Let the bounce happen naturally via boundsBehavior or clamp strictly:
+                            // If you want spring on mouse wheel, you need custom logic,
+                            // but for standard wheel behavior, clamping is safer:
                             var maxScroll = tableList.manualContentHeight - tableList.height
                             if (newPos < 0)
                                 newPos = 0
@@ -454,7 +459,7 @@ Item {
             }
         }
 
-        // ... [Filter Popup Code] ...
+        // === FILTER POPUP ===
         Rectangle {
             id: filterPopup
             visible: false
@@ -697,25 +702,19 @@ Item {
                         text: "Cancel"
                         width: 478.89
                         height: 74
-                        hoverEnabled: true // Ensures hover state is tracked
+                        hoverEnabled: true
 
                         background: Rectangle {
-                            // If hovered: White, Else: Transparent
                             color: parent.hovered ? "white" : "transparent"
-
                             border.color: "white"
-                            // If hovered: No border, Else: 0.82 width
                             border.width: parent.hovered ? 0 : 0.82
-
                             opacity: 0.8
                             radius: 9.87
                         }
 
                         contentItem: Text {
                             text: parent.text
-                            // If hovered: Teal (#007D99), Else: White
                             color: parent.hovered ? "#007D99" : "white"
-
                             opacity: 0.8
                             font.family: "Roboto"
                             font.weight: Font.Medium
@@ -733,25 +732,19 @@ Item {
                         text: "Submit"
                         width: 478.89
                         height: 74
-                        hoverEnabled: true // Ensures hover state is tracked
+                        hoverEnabled: true
 
                         background: Rectangle {
-                            // If hovered: White, Else: Transparent
                             color: parent.hovered ? "white" : "transparent"
-
                             border.color: "white"
-                            // If hovered: No border, Else: 0.82 width
                             border.width: parent.hovered ? 0 : 0.82
-
                             opacity: 0.8
                             radius: 9.87
                         }
 
                         contentItem: Text {
                             text: parent.text
-                            // If hovered: Teal (#007D99), Else: White
                             color: parent.hovered ? "#007D99" : "white"
-
                             opacity: 0.8
                             font.family: "Roboto"
                             font.weight: Font.Medium

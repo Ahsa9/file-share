@@ -229,7 +229,7 @@ Item {
                 }
                 Text {
                     text: "AUDIT TRAIL"
-                    font.family: "Roboto"
+                    font.family: "EncodeSans"
                     font.pixelSize: 40
                     color: "white"
                     font.weight: Font.Medium
@@ -691,20 +691,31 @@ Item {
                 Row {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: 20
+
+                    // === CANCEL BUTTON ===
                     Button {
                         text: "Cancel"
                         width: 478.89
                         height: 74
+                        hoverEnabled: true // Ensures hover state is tracked
+
                         background: Rectangle {
-                            color: "transparent"
+                            // If hovered: White, Else: Transparent
+                            color: parent.hovered ? "white" : "transparent"
+
                             border.color: "white"
-                            border.width: 0.82
+                            // If hovered: No border, Else: 0.82 width
+                            border.width: parent.hovered ? 0 : 0.82
+
                             opacity: 0.8
                             radius: 9.87
                         }
+
                         contentItem: Text {
                             text: parent.text
-                            color: "white"
+                            // If hovered: Teal (#007D99), Else: White
+                            color: parent.hovered ? "#007D99" : "white"
+
                             opacity: 0.8
                             font.family: "Roboto"
                             font.weight: Font.Medium
@@ -716,17 +727,31 @@ Item {
                         }
                         onClicked: filterPopup.visible = false
                     }
+
+                    // === SUBMIT BUTTON ===
                     Button {
                         text: "Submit"
                         width: 478.89
                         height: 74
+                        hoverEnabled: true // Ensures hover state is tracked
+
                         background: Rectangle {
-                            color: "white"
+                            // If hovered: White, Else: Transparent
+                            color: parent.hovered ? "white" : "transparent"
+
+                            border.color: "white"
+                            // If hovered: No border, Else: 0.82 width
+                            border.width: parent.hovered ? 0 : 0.82
+
+                            opacity: 0.8
                             radius: 9.87
                         }
+
                         contentItem: Text {
                             text: parent.text
-                            color: "#007D99"
+                            // If hovered: Teal (#007D99), Else: White
+                            color: parent.hovered ? "#007D99" : "white"
+
                             opacity: 0.8
                             font.family: "Roboto"
                             font.weight: Font.Medium
@@ -749,7 +774,6 @@ Item {
                                         endMonth.currentIndex + 1)
                             var eYearStr = endYear.baseYear + endYear.currentIndex
 
-                            // --- CHANGE 3: Used / instead of - for filter string ---
                             filterByDateRange(
                                         sDayStr + "/" + sMonthStr + "/" + sYearStr,
                                         eDayStr + "/" + eMonthStr + "/" + eYearStr)

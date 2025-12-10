@@ -229,7 +229,7 @@ Item {
                 item.popupName = "bill"
 
                 item.clicked.connect(function () {
-                    console.log("Bill/History Icon Clicked - Popup logic removed as requested.")
+                    console.log("Bill Icon Clicked.")
                     // Original popup logic removed
                 })
             }

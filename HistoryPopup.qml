@@ -43,7 +43,7 @@ Item {
     }
 
     function refreshData() {
-        tableList.contentY = 0
+        // tableList.contentY = 0 // Optional: Reset scroll on refresh
         viewModel.clear()
         var db = getDatabase()
         db.transaction(function (tx) {
@@ -69,7 +69,8 @@ Item {
         })
     }
 
-    // === SIMULATION ===
+
+    /*  // === SIMULATION ===
     Timer {
         id: dummyDataTimer
         interval: 5000
@@ -81,8 +82,7 @@ Item {
             if (root.visible && !isFiltered)
                 refreshData()
         }
-    }
-
+    }*/
     property bool isFiltered: false
 
     Component.onCompleted: initDatabase()
@@ -92,14 +92,22 @@ Item {
     // === ANIMATION & POPUP LOGIC ===
     function show() {
         visible = true
-        popupRect.y = (root.height - popupRect.height) / 2
         opacity = 1
+        // Center the popup
+        popupRect.y = ((root.height - popupRect.height) / 2) - 45
     }
 
     function hide() {
+        // Slide off screen to the bottom
         popupRect.y = root.height
         opacity = 0
+
+        // Reset scroll position (Matching reference behavior)
+        tableList.contentY = 0
+
         hideTimer.start()
+
+        // Reset filter state
         filterPopup.visible = false
         isFiltered = false
     }
@@ -109,6 +117,13 @@ Item {
         interval: 400
         repeat: false
         onTriggered: root.visible = false
+    }
+
+    // Root opacity animation
+    Behavior on opacity {
+        NumberAnimation {
+            duration: 400
+        }
     }
 
     MouseArea {
@@ -122,13 +137,23 @@ Item {
         id: popupRect
         width: 1859
         height: 550
-        anchors.top: parent.top
-        anchors.topMargin: 40
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        // Initial Position: Off-screen bottom
         y: parent.height
+
         radius: 40
         color: Qt.rgba(0 / 255, 125 / 255, 153 / 255, 0.8)
         border.color: "#FFFFFF"
         border.width: 1
+
+        // Identical Animation Behavior to reference code
+        Behavior on y {
+            NumberAnimation {
+                duration: 400
+                easing.type: Easing.OutCubic
+            }
+        }
 
         layer.enabled: true
         layer.effect: DropShadow {
@@ -361,9 +386,6 @@ Item {
                 flickDeceleration: 1500
                 maximumFlickVelocity: 2500
 
-                // Removed the manual contentY clamping in onCountChanged
-                // because it conflicts with the spring effect when list is small.
-                // If you strictly want it to start at top on refresh, simply use contentY = 0 in refreshData()
                 delegate: Rectangle {
                     width: tableList.width
                     height: tableList.rowHeightPx
@@ -445,8 +467,6 @@ Item {
                             var newPos = currentPos - delta
 
                             // Let the bounce happen naturally via boundsBehavior or clamp strictly:
-                            // If you want spring on mouse wheel, you need custom logic,
-                            // but for standard wheel behavior, clamping is safer:
                             var maxScroll = tableList.manualContentHeight - tableList.height
                             if (newPos < 0)
                                 newPos = 0
@@ -775,18 +795,6 @@ Item {
                         }
                     }
                 }
-            }
-        }
-
-        Behavior on y {
-            NumberAnimation {
-                duration: 400
-                easing.type: Easing.OutCubic
-            }
-        }
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 400
             }
         }
     }

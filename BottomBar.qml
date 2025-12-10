@@ -3,39 +3,41 @@ import QtGraphicalEffects 1.15
 
 Item {
     id: bottomBarContainer
-    width: 372
+    width: 440
     height: 108
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.bottom: parent.bottom
     clip: true
 
     property QtObject windowRef
-    // Needed for totalizer popup reference
-
-    // Property to track which popup is currently open
     property string activePopup: ""
+    property var driverInfoPopup: null
 
-    // Function to handle popup state changes
+    property bool logoutLocked: false
+
+    Timer {
+        id: logoutCooldown
+        interval: 3000
+        repeat: false
+        onTriggered: logoutLocked = false
+    }
+
     function setPopupState(popupName, isOpen) {
-        if (isOpen) {
+        if (isOpen)
             activePopup = popupName
-        } else if (activePopup === popupName) {
+        else if (activePopup === popupName)
             activePopup = ""
-        }
         updateIconStates()
     }
 
-    // Function to update all icon states
     function updateIconStates() {
         for (var i = 0; i < iconRow.children.length; i++) {
             var loader = iconRow.children[i]
-            if (loader && loader.item) {
+            if (loader && loader.item)
                 loader.item.updateState()
-            }
         }
     }
 
-    // === Draw a top-curved, bottom-flat bar ===
     Rectangle {
         id: bottomBar
         width: parent.width
@@ -43,21 +45,16 @@ Item {
         y: 0
         radius: 40
         color: Qt.rgba(0, 0.49, 0.60, 0.68)
-        border.width: 0
-        layer.enabled: true
 
-        // Mask the lower curve so only the top remains curved
         Rectangle {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             height: radius
             color: parent.color
-            radius: 0
         }
     }
 
-    // === ICON ROW ===
     Row {
         id: iconRow
         anchors.verticalCenter: parent.verticalCenter
@@ -66,10 +63,14 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: 32
         z: 3
-        spacing: 69
+
+        // Auto spacing for FOUR icons
+        spacing: (bottomBarContainer.width - anchors.leftMargin
+                  - anchors.rightMargin - (4 * 64)) / 3
 
         Component {
             id: hoverIcon
+
             Item {
                 width: 64
                 height: 64
@@ -84,15 +85,12 @@ Item {
 
                 function updateState() {
                     if (activePopup === "") {
-                        // No popup open - normal hover behavior
                         if (isHovered) {
-                            // This icon is hovered - show normal+shade
                             normal.visible = true
                             active.visible = false
                             hoverShade.opacity = 1.0
                             isActive = true
                         } else {
-                            // Check if any other icon is hovered
                             var anyHovered = false
                             for (var i = 0; i < iconRow.children.length; i++) {
                                 var loader = iconRow.children[i]
@@ -104,13 +102,11 @@ Item {
                             }
 
                             if (anyHovered) {
-                                // Another icon is hovered - show active image
                                 normal.visible = false
                                 active.visible = true
                                 hoverShade.opacity = 0.0
                                 isActive = true
                             } else {
-                                // No hover anywhere - show normal state
                                 normal.visible = true
                                 active.visible = false
                                 hoverShade.opacity = 0.0
@@ -118,16 +114,12 @@ Item {
                             }
                         }
                     } else {
-                        // Popup open - special behavior
                         if (activePopup === popupName) {
-                            // This is the icon that opened the popup
-                            // Show normal image with shade (always)
                             normal.visible = true
                             active.visible = false
                             hoverShade.opacity = 1.0
                             isActive = false
                         } else {
-                            // Other icons show active image with no shade
                             normal.visible = false
                             active.visible = true
                             hoverShade.opacity = 0.0
@@ -144,7 +136,6 @@ Item {
                     height: 80
                     opacity: 0.0
                     smooth: true
-                    z: 0
                     Behavior on opacity {
                         NumberAnimation {
                             duration: 150
@@ -159,7 +150,6 @@ Item {
                     width: 44
                     height: 44
                     smooth: true
-                    z: 1
                 }
 
                 Image {
@@ -168,7 +158,6 @@ Item {
                     width: 44
                     height: 44
                     smooth: true
-                    z: 2
                 }
 
                 MouseArea {
@@ -178,41 +167,76 @@ Item {
                     onEntered: {
                         isHovered = true
                         updateState()
-                        // Update all other icons too
                         bottomBarContainer.updateIconStates()
                     }
                     onExited: {
                         isHovered = false
                         updateState()
-                        // Update all other icons too
                         bottomBarContainer.updateIconStates()
                     }
-                    onClicked: {
-                        parent.clicked()
-                    }
+                    onClicked: parent.clicked()
                 }
 
-                Component.onCompleted: {
-                    updateState()
-                }
+                Component.onCompleted: updateState()
             }
         }
 
+        // --- NEW ICON 3: DRIVER INFO ---
         Loader {
-            id: infoIcon
+            id: driverInfoIcon
             sourceComponent: hoverIcon
             onLoaded: {
-                item.normalSource = "qrc:/images/info.png"
-                item.activeSource = "qrc:/images/info_active(light).png"
-                item.popupName = "info"
+                item.normalSource = "qrc:/images/driver_info.png"
+                item.activeSource = "qrc:/images/driver_info_active(light).png"
+                item.popupName = "driver_info"
 
                 item.clicked.connect(function () {
-                    console.log("Info icon clicked")
-                    // Add your info popup logic here
+                    console.log("Driver Info clicked")
+
+                    if (!windowRef) {
+                        console.log("Driver Info: windowRef is null")
+                        return
+                    }
+
+                    // Create popup instance if not created yet
+                    if (!windowRef.driverInfoPopup) {
+                        var component = Qt.createComponent(
+                                    "qrc:/components/DriverInfo.qml")
+                        if (component.status === Component.Ready) {
+                            windowRef.driverInfoPopup = component.createObject(
+                                        windowRef)
+                            if (!windowRef.driverInfoPopup) {
+                                console.log("Driver Info: createObject FAILED")
+                                return
+                            }
+
+                            windowRef.driverInfoPopup.visible = false
+                            windowRef.driverInfoPopup.z = 200
+
+                            // Sync bottom bar highlight state with popup visibility
+                            windowRef.driverInfoPopup.visibleChanged.connect(
+                                        function () {
+                                            bottomBarContainer.setPopupState(
+                                                        "driver_info",
+                                                        windowRef.driverInfoPopup.visible)
+                                        })
+                        } else {
+                            console.log("Driver Info: component error →",
+                                        component.errorString())
+                            return
+                        }
+                    }
+
+                    // Toggle popup
+                    windowRef.driverInfoPopup.visible = !windowRef.driverInfoPopup.visible
+                    bottomBarContainer.setPopupState(
+                                "driver_info",
+                                windowRef.driverInfoPopup.visible)
                 })
             }
         }
 
+        // BILL ---
         Loader {
             id: billIcon
             sourceComponent: hoverIcon
@@ -222,12 +246,40 @@ Item {
                 item.popupName = "bill"
 
                 item.clicked.connect(function () {
-                    console.log("Bill icon clicked")
-                    // Add your bill popup logic here
+                    console.log("trend clicked")
+
+                    if (!windowRef.historyPopup) {
+                        var component = Qt.createComponent(
+                                    "qrc:/components/HistoryPopup.qml")
+                        if (component.status === Component.Ready) {
+                            windowRef.historyPopup = component.createObject(
+                                        windowRef)
+                            windowRef.historyPopup.visible = false
+                            windowRef.historyPopup.z = 100
+
+                            windowRef.historyPopup.visibleChanged.connect(
+                                        function () {
+                                            bottomBarContainer.setPopupState(
+                                                        "bill",
+                                                        windowRef.historyPopup.visible)
+                                        })
+                        }
+                    }
+
+                    if (windowRef.historyPopup) {
+                        if (windowRef.historyPopup.visible) {
+                            windowRef.historyPopup.hide()
+                            bottomBarContainer.setPopupState("bill", false)
+                        } else {
+                            windowRef.historyPopup.show()
+                            bottomBarContainer.setPopupState("bill", true)
+                        }
+                    }
                 })
             }
         }
 
+        //TREND / TOTALIZER ---
         Loader {
             id: trendIcon
             sourceComponent: hoverIcon
@@ -237,39 +289,26 @@ Item {
                 item.popupName = "trend"
 
                 item.clicked.connect(function () {
-                    console.log("Trend icon clicked")
+                    console.log("trend clicked")
 
-                    // Create the popup if it doesn't exist
                     if (!windowRef.totalizerPopup) {
-                        console.log("Creating totalizer popup...")
                         var component = Qt.createComponent(
                                     "qrc:/components/Totalizers.qml")
                         if (component.status === Component.Ready) {
                             windowRef.totalizerPopup = component.createObject(
                                         windowRef)
-                            if (windowRef.totalizerPopup) {
-                                console.log("Totalizer popup created successfully")
-                                windowRef.totalizerPopup.visible = false
-                                windowRef.totalizerPopup.z = 100 // Ensure it's on top
+                            windowRef.totalizerPopup.visible = false
+                            windowRef.totalizerPopup.z = 100
 
-                                // Connect to the popup's visibility changes
-                                windowRef.totalizerPopup.visibleChanged.connect(
-                                            function () {
-                                                bottomBarContainer.setPopupState(
-                                                            "trend",
-                                                            windowRef.totalizerPopup.visible)
-                                            })
-                            } else {
-                                console.error(
-                                            "Failed to create totalizer popup object")
-                            }
-                        } else {
-                            console.error("Error loading Totalizers.qml:",
-                                          component.errorString())
+                            windowRef.totalizerPopup.visibleChanged.connect(
+                                        function () {
+                                            bottomBarContainer.setPopupState(
+                                                        "trend",
+                                                        windowRef.totalizerPopup.visible)
+                                        })
                         }
                     }
 
-                    // Toggle visibility
                     if (windowRef.totalizerPopup) {
                         if (windowRef.totalizerPopup.visible) {
                             windowRef.totalizerPopup.hide()
@@ -277,6 +316,49 @@ Item {
                         } else {
                             windowRef.totalizerPopup.show()
                             bottomBarContainer.setPopupState("trend", true)
+                        }
+                    }
+                })
+            }
+        }
+
+        // INFO ---
+        Loader {
+            id: infoIcon
+            sourceComponent: hoverIcon
+            onLoaded: {
+                item.normalSource = "qrc:/images/info.png"
+                item.activeSource = "qrc:/images/info_active(light).png"
+                item.popupName = "info"
+
+                item.clicked.connect(function () {
+                    console.log("info clicked")
+
+                    if (!windowRef.infoPopup) {
+                        var component = Qt.createComponent(
+                                    "qrc:/components/Info.qml")
+                        if (component.status === Component.Ready) {
+                            windowRef.infoPopup = component.createObject(
+                                        windowRef)
+                            windowRef.infoPopup.visible = false
+                            windowRef.infoPopup.z = 100
+
+                            windowRef.infoPopup.visibleChanged.connect(
+                                        function () {
+                                            bottomBarContainer.setPopupState(
+                                                        "info",
+                                                        windowRef.infoPopup.visible)
+                                        })
+                        }
+                    }
+
+                    if (windowRef.infoPopup) {
+                        if (windowRef.infoPopup.visible) {
+                            windowRef.infoPopup.hide()
+                            bottomBarContainer.setPopupState("info", false)
+                        } else {
+                            windowRef.infoPopup.show()
+                            bottomBarContainer.setPopupState("info", true)
                         }
                     }
                 })

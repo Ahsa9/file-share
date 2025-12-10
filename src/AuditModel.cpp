@@ -3,74 +3,85 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QDebug>
-#include <QStandardPaths>
-#include <QDir>
+#include <QFile>
 #include <QSqlRecord>
 
 AuditModel::AuditModel(QObject *parent) : QSqlQueryModel(parent)
 {
-    initDatabase();
-    refresh(); // Load data on startup
+    // Only try to load data if connection was successful
+    if (initDatabase()) {
+        refresh();
+    }
 }
 
-void AuditModel::initDatabase()
+bool AuditModel::initDatabase()
 {
-    // 1. Setup the SQLite Driver
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
+    // 1. Setup SQLite Driver
+    QSqlDatabase db;
+    if (QSqlDatabase::contains("qt_sql_default_connection")) {
+        db = QSqlDatabase::database("qt_sql_default_connection");
+    } else {
+        db = QSqlDatabase::addDatabase("QSQLITE");
+    }
 
-    // 2. Define the path (Standard AppData location)
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir dir(path);
-    if (!dir.exists()) dir.mkpath(".");
+    // 2. Define exact path
+    QString fullPath = "/taximeter-config/audit_trail.db";
 
-    QString dbPath = path + "/SystemLogs.db";
-    db.setDatabaseName(dbPath);
+    // 3. STRICT CHECK: Does the file exist?
+    if (!QFile::exists(fullPath)) {
+        qDebug() << "❌ ERROR: Database file not found at:" << fullPath;
+        qDebug() << "   -> Please ensure the file exists and permissions are correct.";
+        return false; // Stop here. Do not create anything.
+    }
 
-    // 3. Open Connection
+    // 4. Open Connection
+    db.setDatabaseName(fullPath);
     if (!db.open()) {
-        qDebug() << "CRITICAL: Could not open database!" << db.lastError().text();
-        return;
+        qDebug() << "❌ CRITICAL: Found file but could not open database:" << db.lastError().text();
+        return false;
     }
 
-    qDebug() << "Database connected successfully at:" << dbPath;
-
-    // 4. Create Table if it doesn't exist
-    QSqlQuery query;
-    bool success = query.exec(
-        "CREATE TABLE IF NOT EXISTS logs ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-        "name TEXT, "
-        "date TEXT, "
-        "time TEXT, "
-        "changes TEXT)"
-        );
-
-    if (!success) qDebug() << "Table creation failed:" << query.lastError().text();
-
-    // 5. (Optional) Seed dummy data if empty
-    query.exec("SELECT count(*) FROM logs");
-    if (query.next() && query.value(0).toInt() == 0) {
-        query.exec("INSERT INTO logs (name, date, time, changes) VALUES ('Admin', '10/12/2025', '09:00 AM', 'System Boot')");
-        query.exec("INSERT INTO logs (name, date, time, changes) VALUES ('Driver 1', '10/12/2025', '09:15 AM', 'Shift Start')");
-        query.exec("INSERT INTO logs (name, date, time, changes) VALUES ('System', '10/12/2025', '12:00 PM', 'Auto Update')");
+    // 5. Verify Table Exists
+    // Even if file exists, it might be empty or corrupt.
+    if (!db.tables().contains("logs")) {
+        qDebug() << "❌ ERROR: Database exists, but table 'logs' is missing.";
+        return false;
     }
+
+    qDebug() << "✅ Successfully connected to existing database at:" << fullPath;
+    return true;
 }
 
 void AuditModel::refresh()
 {
-    this->setQuery("SELECT id, name, date, time, changes FROM logs ORDER BY id DESC LIMIT 50");
-    if (lastError().isValid()) qDebug() << "Refresh error:" << lastError().text();
+    QSqlDatabase db = QSqlDatabase::database();
+
+    // Safety: Do not run query if DB is closed or invalid
+    if (!db.isOpen()) {
+        qWarning() << "⚠️ Cannot refresh: Database is not connected.";
+        return;
+    }
+
+    this->setQuery("SELECT id, name, date, time, changes FROM logs ORDER BY id DESC LIMIT 50", db);
+
+    if (lastError().isValid()) {
+        qDebug() << "❌ Query Error:" << lastError().text();
+    }
 }
 
 void AuditModel::applyFilter(const QString &startDate, const QString &endDate)
 {
-    // Note: Simple string comparison for dates.
-    // Ensure your date format in DB matches what you pass here.
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) return;
+
     QString qStr = QString("SELECT id, name, date, time, changes FROM logs WHERE date BETWEEN '%1' AND '%2' ORDER BY id DESC")
                        .arg(startDate, endDate);
 
-    this->setQuery(qStr);
-    if (lastError().isValid()) qDebug() << "Filter error:" << lastError().text();
+    this->setQuery(qStr, db);
+
+    if (lastError().isValid()) {
+        qDebug() << "❌ Filter Error:" << lastError().text();
+    }
 }
 
 void AuditModel::clearFilter()
@@ -78,7 +89,6 @@ void AuditModel::clearFilter()
     refresh();
 }
 
-// Map SQL column indexes to QML role names
 QHash<int, QByteArray> AuditModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
@@ -90,13 +100,10 @@ QHash<int, QByteArray> AuditModel::roleNames() const
     return roles;
 }
 
-// Retrieve data for QML
 QVariant AuditModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid()) return QVariant();
 
-    // Calculate column index based on role
-    // Qt::UserRole + 1 maps to column 0 (id), etc.
     int columnIndex = role - (Qt::UserRole + 1);
 
     if (columnIndex >= 0 && columnIndex < record().count()) {

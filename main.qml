@@ -7,37 +7,121 @@ Window {
     width: 2560
     height: 720
     visible: true
-    color: "#121217"
-    title: "TaxiMeter"
-    flags: Qt.Window
-    visibility: "Windowed"
+    color: "black"
 
-    // Add this property
+    flags: Qt.FramelessWindowHint | Qt.Window
+    visibility: Window.FullScreen
+
+    // ---- APPLICATION STATE MACHINE ----
+    property string appState: "splash"
+    // Popup References (Used to close them remotely)
     property var totalizerPopup: null
-    // === MAP ALWAYS BEHIND EVERYTHING ===
+    property var infoPopup: null
+    property var driverInfoPopup: null
+    property var historyPopup: null
+    function openAdminPanel() {
+        console.log("Opening Admin Panel - Closing other popups...")
+
+        // 1. Force close all popups if they exist
+        if (root.totalizerPopup)
+            root.totalizerPopup.visible = false
+        if (root.infoPopup)
+            root.infoPopup.visible = false
+        if (root.driverInfoPopup)
+            root.driverInfoPopup.visible = false
+        if (root.historyPopup)
+            root.historyPopup.visible = false
+
+        // 2. Load and Show Admin Settings on top
+        adminLoader.active = true
+    }
+
+    // ---------------------------------------------------------
+    // ADMIN SETTINGS LOADER (Overlay)
+    // ---------------------------------------------------------
+    Loader {
+        id: adminLoader
+        active: false // Only load when needed
+        source: "qrc:/components/AdminSettings.qml" // Adjust path if needed
+        anchors.fill: parent
+        z: 999 // Ensure it covers EVERYTHING (Home, BottomBar, Popups)
+
+        onLoaded: {
+            // connect the requestClose signal from AdminSettings
+            item.onRequestClose.connect(function () {
+                adminLoader.active = false
+            })
+        }
+    }
+
+    // ---------------------------------------------------------
+    // LISTEN FOR LOGIN SUCCESS / FAILED FROM C++ (AppCore)
+    // ---------------------------------------------------------
+    Connections {
+        target: appCore
+
+        function onLoginSuccess() {
+            console.log("LOGIN SUCCESS → Navigating to HOME")
+            appState = "home"
+            screenLoader.source = ""
+            screenLoader.sourceComponent = homeScreen
+        }
+
+        function onLoginFailed(reason) {
+            console.log("LOGIN FAILED:", reason)
+            // TODO: show error popup
+        }
+    }
+
+    // ---------------------------------------------------------
+    // MAP LOADER — Loads only after splash
+    // ---------------------------------------------------------
     Loader {
         id: mapLoader
         anchors.fill: parent
-        source: "qrc:/components/Map.qml"
+        source: "" // load after splash
         z: 0
     }
 
-    // === MAIN SCREEN ABOVE MAP ===
+    // ---------------------------------------------------------
+    // SCREEN LOADER — Splash → Login → Home
+    // ---------------------------------------------------------
     Loader {
         id: screenLoader
         anchors.fill: parent
-        sourceComponent: homeScreen
-        z: 1
+        source: "qrc:/components/SplashScreen.qml"
+        z: 10
+
+        onLoaded: {
+            if (!item)
+                return
+
+            // ---- Step 1: When splash finishes → go to Login ----
+            if (appState === "splash" && item.splashFinished) {
+
+                item.splashFinished.connect(function () {
+
+                    // load map in background
+                    mapLoader.source = "qrc:/components/Map.qml"
+
+                    // switch to login screen
+                    appState = "login"
+                    screenLoader.source = ""
+                    screenLoader.source = "qrc:/components/LogginPage.qml"
+                })
+            }
+        }
     }
 
-    // === HOME SCREEN ===
+    // ---------------------------------------------------------
+    // HOME SCREEN (Main UI)
+    // ---------------------------------------------------------
     Component {
         id: homeScreen
 
         Item {
             anchors.fill: parent
 
-            // Background image removed
             HiredPanel {
                 id: hiredPanel
                 anchors.top: parent.top
@@ -74,11 +158,18 @@ Window {
                 id: bottomBar
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
+                windowRef: root
+                visible: appCore.taxiMeterStatus.toUpperCase() === "FOR HIRE"
                 z: 5
-                windowRef: root // pass the Window reference like MainBar
             }
 
-            // ✅ MAP BUTTON REMOVED
+            WarningsWindow {
+                id: warningsWindow
+                anchors.centerIn: parent
+                anchors.horizontalCenter: parent.horizontalCenter
+                windowRef: root
+                z: 5
+            }
         }
     }
 }

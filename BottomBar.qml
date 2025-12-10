@@ -237,6 +237,7 @@ Item {
         }
 
         // BILL ---
+        // BILL / HISTORY ICON
         Loader {
             id: billIcon
             sourceComponent: hoverIcon
@@ -246,26 +247,44 @@ Item {
                 item.popupName = "bill"
 
                 item.clicked.connect(function () {
-                    console.log("trend clicked")
+                    console.log("Bill/History Icon Clicked")
 
+                    // 1. Create the popup if it doesn't exist
                     if (!windowRef.historyPopup) {
+                        console.log("Attempting to load: qrc:/components/HistoryPopup.qml")
+
                         var component = Qt.createComponent(
                                     "qrc:/components/HistoryPopup.qml")
+
                         if (component.status === Component.Ready) {
                             windowRef.historyPopup = component.createObject(
                                         windowRef)
-                            windowRef.historyPopup.visible = false
-                            windowRef.historyPopup.z = 100
 
-                            windowRef.historyPopup.visibleChanged.connect(
-                                        function () {
-                                            bottomBarContainer.setPopupState(
-                                                        "bill",
-                                                        windowRef.historyPopup.visible)
-                                        })
+                            if (windowRef.historyPopup) {
+                                windowRef.historyPopup.visible = false
+                                windowRef.historyPopup.z = 100
+
+                                // Connect visibility change to icon state
+                                windowRef.historyPopup.visibleChanged.connect(
+                                            function () {
+                                                bottomBarContainer.setPopupState(
+                                                            "bill",
+                                                            windowRef.historyPopup.visible)
+                                            })
+                                console.log("History Popup created successfully")
+                            } else {
+                                console.error(
+                                            "Error: Component Ready, but createObject returned null.")
+                            }
+                        } else {
+                            // === THIS IS THE IMPORTANT PART ===
+                            // If the popup fails to open, this will tell you WHY.
+                            console.error("Error loading HistoryPopup.qml:",
+                                          component.errorString())
                         }
                     }
 
+                    // 2. Toggle Visibility
                     if (windowRef.historyPopup) {
                         if (windowRef.historyPopup.visible) {
                             windowRef.historyPopup.hide()
@@ -278,7 +297,6 @@ Item {
                 })
             }
         }
-
         //TREND / TOTALIZER ---
         Loader {
             id: trendIcon

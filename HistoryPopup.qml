@@ -454,6 +454,8 @@ Item {
             anchors.centerIn: parent
             z: 100
             clip: true
+            border.color: "#FFFFFF"
+            border.width: 1
             MouseArea {
                 anchors.fill: parent
             } // Consume events

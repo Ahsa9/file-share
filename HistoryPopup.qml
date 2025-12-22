@@ -288,7 +288,7 @@ Item {
                 Image {
                     width: 50
                     height: 50
-                    source: "qrc:/images/audit-trail.png"
+                    source: "qrc:/images/audit_trail.png"
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {

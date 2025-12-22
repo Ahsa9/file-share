@@ -13,10 +13,9 @@ Item {
     property bool isFiltered: false
 
     // === 1. DATE STATE VARIABLES ===
-    // We store the current selection here so buttons update automatically
     property int startDayIndex: 0
     property int startMonthIndex: 0
-    property int startYearIndex: 0 // Offset from baseYear
+    property int startYearIndex: 0
     property int endDayIndex: 0
     property int endMonthIndex: 0
     property int endYearIndex: 0
@@ -37,7 +36,6 @@ Item {
         }
     }
 
-    // Helper to format numbers (1 -> "01")
     function pad(n) {
         return n < 10 ? "0" + n : n
     }
@@ -45,15 +43,15 @@ Item {
     onVisibleChanged: if (visible)
                           refreshData()
 
-    // === POPUP ANIMATION ===
+    // === POPUP ANIMATION (FADE ONLY) ===
     function show() {
         visible = true
         opacity = 1
-        popupRect.y = ((root.height - popupRect.height) / 2) - 45
+        // Removed Y calculation logic
     }
 
     function hide() {
-        popupRect.y = root.height
+        // Removed Y movement logic
         opacity = 0
         tableList.contentY = 0
         hideTimer.start()
@@ -70,45 +68,46 @@ Item {
         repeat: false
         onTriggered: root.visible = false
     }
+
+    // This controls the Fade In / Fade Out speed
     Behavior on opacity {
         NumberAnimation {
             duration: 400
+            easing.type: Easing.InOutQuad
         }
     }
+
     MouseArea {
         anchors.fill: parent
         onClicked: root.hide()
     }
 
     // ==========================================================
-    // === NEW COMPONENT: THE POPPED OUT SELECTION WHEEL ===
+    // === REUSABLE COMPONENT: SELECTION WHEEL POPUP ===
     // ==========================================================
     Rectangle {
         id: bigSlotPopup
         anchors.fill: parent
-        color: "#AA000000" // Dark overlay
-        z: 200 // Above everything
+        color: "#AA000000"
+        z: 200
         visible: false
         opacity: 0
 
         property var currentModel: 1
         property int tempIndex: 0
-        property var updateCallback: null // Function to run on OK
+        property var updateCallback: null
 
-        // Animation for showing/hiding
         Behavior on opacity {
             NumberAnimation {
                 duration: 200
             }
         }
 
-        // Click outside to cancel
         MouseArea {
             anchors.fill: parent
             onClicked: bigSlotPopup.close()
         }
 
-        // The Modal Box
         Rectangle {
             width: 250
             height: 375
@@ -118,7 +117,6 @@ Item {
             border.width: 2
             anchors.centerIn: parent
 
-            // Prevent clicks inside from closing
             MouseArea {
                 anchors.fill: parent
             }
@@ -128,7 +126,6 @@ Item {
                 anchors.margins: 20
                 spacing: 20
 
-                // The Enlarged Tumbler
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
@@ -139,14 +136,13 @@ Item {
                         width: parent.width
                         height: parent.height
                         model: bigSlotPopup.currentModel
-                        visibleItemCount: 3 // Shows previous, current, next
+                        visibleItemCount: 3
 
-                        // Set font styles
                         delegate: Text {
                             text: (typeof modelData === "number") ? root.pad(
                                                                         modelData + 1) : modelData
                             color: "white"
-                            font.pixelSize: 50 // Enlarged font
+                            font.pixelSize: 50
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
@@ -156,21 +152,20 @@ Item {
                                    / (Tumbler.tumbler.visibleItemCount / 1.5)
                         }
 
-                        // Highlights the center selection
                         background: Rectangle {
                             anchors.fill: parent
                             color: "transparent"
                             Rectangle {
                                 width: parent.width * 0.6
                                 height: 2
-                                color: "#0FE6EF" // Cyan highlight line top
+                                color: "#0FE6EF"
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 y: (parent.height / 2) - 35
                             }
                             Rectangle {
                                 width: parent.width * 0.6
                                 height: 2
-                                color: "#0FE6EF" // Cyan highlight line bottom
+                                color: "#0FE6EF"
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 y: (parent.height / 2) + 35
                             }
@@ -178,7 +173,6 @@ Item {
                     }
                 }
 
-                // OK Button
                 Button {
                     text: "OK"
                     Layout.preferredWidth: 200
@@ -240,8 +234,6 @@ Item {
                 border.color: "#AACCFF"
                 border.width: 1
                 radius: 4
-
-                // Visual feedback when pressed
                 Rectangle {
                     anchors.fill: parent
                     color: "white"
@@ -259,7 +251,6 @@ Item {
             }
 
             onClicked: {
-                // Open the big popup
                 bigSlotPopup.open(slotModel, slotIndex, confirmCallback)
             }
         }
@@ -270,25 +261,21 @@ Item {
         id: popupRect
         width: 1859
         height: 550
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: parent.height
+
+        // CHANGED: Fixed positioning instead of dynamic Y
+        anchors.centerIn: parent
+        anchors.verticalCenterOffset: -45 // Keeps the position you originally calculated
+
         radius: 40
         color: Qt.rgba(0, 0.49, 0.60, 0.8)
         border.color: "#FFFFFF"
         border.width: 1
+
         MouseArea {
             anchors.fill: parent
         }
 
-        Behavior on y {
-            NumberAnimation {
-                duration: 400
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        // [SCROLLBAR CODE REMOVED FOR BREVITY - KEEP YOUR ORIGINAL SCROLLBAR HERE]
-        // ... (Keep your scrollbar and ListView code exactly as it was) ...
+        // REMOVED: Behavior on y { ... }
         Column {
             anchors.fill: parent
             anchors.margins: 40
@@ -392,7 +379,6 @@ Item {
                 clip: true
                 model: auditModel
                 property int rowHeightPx: 62
-                property real manualContentHeight: count * rowHeightPx
                 flickDeceleration: 1500
                 maximumFlickVelocity: 2500
                 delegate: Rectangle {
@@ -435,7 +421,7 @@ Item {
             }
         }
 
-        // === MODIFIED FILTER POPUP ===
+        // === FILTER POPUP ===
         Rectangle {
             id: filterPopup
             visible: false
@@ -450,7 +436,7 @@ Item {
             border.width: 1
             MouseArea {
                 anchors.fill: parent
-            } // Consume events
+            }
 
             Component {
                 id: colonSeparator
@@ -464,7 +450,6 @@ Item {
                 }
             }
 
-            // Generate Year Model (2020 -> 2039)
             property var yearModel: {
                 var arr = []
                 for (var i = 0; i < 20; i++)
@@ -479,7 +464,7 @@ Item {
                 spacing: 66
                 Item {
                     Layout.preferredWidth: filterPopup.width
-                    Layout.preferredHeight: 60 // Slightly taller for buttons
+                    Layout.preferredHeight: 60
 
                     Rectangle {
                         id: vSep
@@ -503,7 +488,6 @@ Item {
                             font.pixelSize: 40
                         }
 
-                        // Start Day Button
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
@@ -519,7 +503,6 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
-                        // Start Month Button
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
@@ -535,7 +518,6 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
-                        // Start Year Button
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
@@ -566,7 +548,6 @@ Item {
                             font.pixelSize: 40
                         }
 
-                        // End Day Button
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
@@ -582,7 +563,6 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
-                        // End Month Button
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
@@ -598,7 +578,6 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
-                        // End Year Button
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {

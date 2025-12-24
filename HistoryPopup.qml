@@ -236,8 +236,8 @@ Item {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 20
-                spacing: 20
+                anchors.margins: 10
+                spacing: 10
 
                 Item {
                     Layout.fillWidth: true
@@ -543,10 +543,13 @@ Item {
         }
 
         // === FILTER POPUP ===
+        // === FILTER POPUP ===
+        // === FILTER POPUP ===
+        // === FILTER POPUP ===
         Rectangle {
             id: filterPopup
             visible: false
-            width: 1054 // Widened to prevent text cutoff
+            width: 1054
             height: 285
             radius: 24
             color: "#007D99"
@@ -555,19 +558,26 @@ Item {
             clip: true
             border.color: "#FFFFFF"
             border.width: 1
+
             MouseArea {
                 anchors.fill: parent
             }
 
+            // --- FIXED: Colon Separator with defined Width ---
             Component {
                 id: colonSeparator
-                Text {
-                    text: ":"
-                    color: "white"
-                    font.bold: true
-                    font.pixelSize: 50
+                Item {
+                    // Give the separator a container width so it pushes buttons apart
+                    width: 18
                     height: 47
-                    verticalAlignment: Text.AlignVCenter
+                    Text {
+                        text: ":"
+                        color: "white"
+                        font.bold: true
+                        font.pixelSize: 50
+                        anchors.centerIn: parent // Center the colon in the 30px space
+                        verticalAlignment: Text.AlignVCenter
+                    }
                 }
             }
 
@@ -578,177 +588,213 @@ Item {
                 return arr
             }
 
-            ColumnLayout {
-                anchors.left: parent.left
+            // =========================================================
+            // === RECTANGLE 1: DATE SLOTS (Top) =======================
+            // =========================================================
+            Rectangle {
+                id: slotsContainer
+                width: 990
+                height: 115
+                color: "transparent"
+
                 anchors.top: parent.top
-                anchors.topMargin: 66
-                spacing: 66
-                Item {
-                    Layout.preferredWidth: filterPopup.width
-                    Layout.preferredHeight: 60
+                anchors.topMargin: 32
+                anchors.left: parent.left
+                anchors.leftMargin: 64
 
-                    Rectangle {
-                        id: vSep
-                        width: 2
-                        height: 47
-                        color: Qt.rgba(1, 1, 1, 0.2)
-                        visible: false
-                        anchors.centerIn: parent
-                    }
+                Row {
+                    id: dateSelectionRow
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    spacing: 79 // Space between the "From" block and "To" block
 
-                    // --- START DATE ROW ---
-                    RowLayout {
-                        spacing: 10
-                        anchors.right: vSep.left
-                        anchors.rightMargin: 30
-                        anchors.verticalCenter: vSep.verticalCenter
+                    // --- FROM SECTION ---
+                    Row {
+                        id: fromSection
+                        spacing: 32 // Gap between "From" Label and the Buttons
+                        anchors.verticalCenter: parent.verticalCenter
+
                         Text {
                             text: "From"
                             color: "#0FE6EF"
                             font.family: "Roboto"
                             font.pixelSize: 40
+                            anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        // Day: 74x47
-                        Loader {
-                            sourceComponent: dateSlotButton
-                            onLoaded: {
-                                item.width = 74
-                                item.height = 47
-                                item.slotModel = 31
-                                item.slotIndex = Qt.binding(function () {
-                                    return root.startDayIndex
-                                })
-                                item.confirmCallback = function (idx) {
-                                    root.startDayIndex = idx
+                        Row {
+                            // Gap between Day, Separator, Month, etc.
+                            // With the separator now being 30px wide,
+                            // a spacing of 5 here creates: 5px + 30px + 5px = 40px visual gap
+                            spacing: 10
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            // Day
+                            Loader {
+                                sourceComponent: dateSlotButton
+                                onLoaded: {
+                                    item.width = 74
+                                    item.height = 47
+                                    item.slotModel = 31
+                                    item.slotIndex = Qt.binding(function () {
+                                        return root.startDayIndex
+                                    })
+                                    item.confirmCallback = function (idx) {
+                                        root.startDayIndex = idx
+                                    }
                                 }
                             }
-                        }
-                        Loader {
-                            sourceComponent: colonSeparator
-                        }
-                        // Month: 90x47
-                        Loader {
-                            sourceComponent: dateSlotButton
-                            onLoaded: {
-                                item.width = 90
-                                item.height = 47
-                                item.slotModel = 12
-                                item.slotIndex = Qt.binding(function () {
-                                    return root.startMonthIndex
-                                })
-                                item.confirmCallback = function (idx) {
-                                    root.startMonthIndex = idx
+                            Loader {
+                                sourceComponent: colonSeparator
+                            } // Now has 30px width
+
+                            // Month
+                            Loader {
+                                sourceComponent: dateSlotButton
+                                onLoaded: {
+                                    item.width = 90
+                                    item.height = 47
+                                    item.slotModel = 12
+                                    item.slotIndex = Qt.binding(function () {
+                                        return root.startMonthIndex
+                                    })
+                                    item.confirmCallback = function (idx) {
+                                        root.startMonthIndex = idx
+                                    }
                                 }
                             }
-                        }
-                        Loader {
-                            sourceComponent: colonSeparator
-                        }
-                        // Year: 89x47
-                        Loader {
-                            sourceComponent: dateSlotButton
-                            onLoaded: {
-                                item.width = 89
-                                item.height = 47
-                                item.slotModel = filterPopup.yearModel
-                                item.displayValue = Qt.binding(function () {
-                                    return root.baseYear + root.startYearIndex
-                                })
-                                item.slotIndex = Qt.binding(function () {
-                                    return root.startYearIndex
-                                })
-                                item.confirmCallback = function (idx) {
-                                    root.startYearIndex = idx
+                            Loader {
+                                sourceComponent: colonSeparator
+                            } // Now has 30px width
+
+                            // Year
+                            Loader {
+                                sourceComponent: dateSlotButton
+                                onLoaded: {
+                                    item.width = 89
+                                    item.height = 47
+                                    item.slotModel = filterPopup.yearModel
+                                    item.displayValue = Qt.binding(function () {
+                                        return root.baseYear + root.startYearIndex
+                                    })
+                                    item.slotIndex = Qt.binding(function () {
+                                        return root.startYearIndex
+                                    })
+                                    item.confirmCallback = function (idx) {
+                                        root.startYearIndex = idx
+                                    }
                                 }
                             }
                         }
                     }
 
-                    // --- END DATE ROW ---
-                    RowLayout {
-                        spacing: 10
-                        anchors.left: vSep.right
-                        anchors.leftMargin: 30
-                        anchors.verticalCenter: vSep.verticalCenter
+                    // --- TO SECTION ---
+                    Row {
+                        id: toSection
+                        spacing: 25 // Gap between "To" Label and Buttons
+                        anchors.verticalCenter: parent.verticalCenter
+
                         Text {
                             text: "To"
                             color: "#0FE6EF"
                             font.family: "Roboto"
                             font.pixelSize: 40
+                            anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        // Day: 74x47
-                        Loader {
-                            sourceComponent: dateSlotButton
-                            onLoaded: {
-                                item.width = 74
-                                item.height = 47
-                                item.slotModel = 31
-                                item.slotIndex = Qt.binding(function () {
-                                    return root.endDayIndex
-                                })
-                                item.confirmCallback = function (idx) {
-                                    root.endDayIndex = idx
+                        Row {
+                            spacing: 5
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            // Day
+                            Loader {
+                                sourceComponent: dateSlotButton
+                                onLoaded: {
+                                    item.width = 74
+                                    item.height = 47
+                                    item.slotModel = 31
+                                    item.slotIndex = Qt.binding(function () {
+                                        return root.endDayIndex
+                                    })
+                                    item.confirmCallback = function (idx) {
+                                        root.endDayIndex = idx
+                                    }
                                 }
                             }
-                        }
-                        Loader {
-                            sourceComponent: colonSeparator
-                        }
-                        // Month: 90x47
-                        Loader {
-                            sourceComponent: dateSlotButton
-                            onLoaded: {
-                                item.width = 90
-                                item.height = 47
-                                item.slotModel = 12
-                                item.slotIndex = Qt.binding(function () {
-                                    return root.endMonthIndex
-                                })
-                                item.confirmCallback = function (idx) {
-                                    root.endMonthIndex = idx
+                            Loader {
+                                sourceComponent: colonSeparator
+                            }
+
+                            // Month
+                            Loader {
+                                sourceComponent: dateSlotButton
+                                onLoaded: {
+                                    item.width = 90
+                                    item.height = 47
+                                    item.slotModel = 12
+                                    item.slotIndex = Qt.binding(function () {
+                                        return root.endMonthIndex
+                                    })
+                                    item.confirmCallback = function (idx) {
+                                        root.endMonthIndex = idx
+                                    }
                                 }
                             }
-                        }
-                        Loader {
-                            sourceComponent: colonSeparator
-                        }
-                        // Year: 89x47
-                        Loader {
-                            sourceComponent: dateSlotButton
-                            onLoaded: {
-                                item.width = 89
-                                item.height = 47
-                                item.slotModel = filterPopup.yearModel
-                                item.displayValue = Qt.binding(function () {
-                                    return root.baseYear + root.endYearIndex
-                                })
-                                item.slotIndex = Qt.binding(function () {
-                                    return root.endYearIndex
-                                })
-                                item.confirmCallback = function (idx) {
-                                    root.endYearIndex = idx
+                            Loader {
+                                sourceComponent: colonSeparator
+                            }
+
+                            // Year
+                            Loader {
+                                sourceComponent: dateSlotButton
+                                onLoaded: {
+                                    item.width = 89
+                                    item.height = 47
+                                    item.slotModel = filterPopup.yearModel
+                                    item.displayValue = Qt.binding(function () {
+                                        return root.baseYear + root.endYearIndex
+                                    })
+                                    item.slotIndex = Qt.binding(function () {
+                                        return root.endYearIndex
+                                    })
+                                    item.confirmCallback = function (idx) {
+                                        root.endYearIndex = idx
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                // Action Buttons
+            // =========================================================
+            // === RECTANGLE 2: BUTTONS (Bottom) =======================
+            // =========================================================
+            Rectangle {
+                id: buttonsContainer
+                width: 966
+                height: 74
+                color: "transparent"
+
+                anchors.top: slotsContainer.bottom
+                anchors.topMargin: 32
+                // --- CHANGED: Center horizontally instead of anchoring left ---
+                anchors.horizontalCenter: parent.horizontalCenter
+
                 Row {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: 20
+                    // Use centerIn to ensure buttons stay centered inside the container
+                    anchors.centerIn: parent
+                    spacing: 8
+
                     Button {
                         text: "Cancel"
-                        width: 478
+                        width: 479
                         height: 74
                         background: Rectangle {
                             color: parent.down
                                    || parent.hovered ? "white" : "transparent"
                             border.color: "white"
                             radius: 10
-                            opacity: 1
                         }
                         contentItem: Text {
                             text: parent.text
@@ -762,16 +808,16 @@ Item {
                         }
                         onClicked: filterPopup.visible = false
                     }
+
                     Button {
                         text: "Submit"
-                        width: 478
+                        width: 479
                         height: 74
                         background: Rectangle {
                             color: parent.down
                                    || parent.hovered ? "white" : "transparent"
                             border.color: "white"
                             radius: 10
-                            opacity: 1
                         }
                         contentItem: Text {
                             text: parent.text
@@ -791,8 +837,8 @@ Item {
                             var sY = filterPopup.yearModel[root.startYearIndex]
                             var eY = filterPopup.yearModel[root.endYearIndex]
 
-                            filterByDateRange(sD + "/" + sM + "/" + sY,
-                                              eD + "/" + eM + "/" + eY)
+                            root.filterByDateRange(sD + "/" + sM + "/" + sY,
+                                                   eD + "/" + eM + "/" + eY)
                             filterPopup.visible = false
                         }
                     }

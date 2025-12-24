@@ -28,6 +28,19 @@ Item {
     property bool progressFinished: false
     property real speedValue: 0
 
+    // -----------------------------------------------------------
+    // NEW: 10s Timer for Speed Limit Auto-Close
+    // -----------------------------------------------------------
+    Timer {
+        id: speedCloseTimer
+        interval: 10000 // 10 seconds
+        repeat: false
+        onTriggered: {
+            console.log("Speed limit timer expired: Auto-closing popup.")
+            root.hide()
+        }
+    }
+
     Timer {
         id: autoCloseTimer
         interval: 100
@@ -37,7 +50,7 @@ Item {
             if (!progressActive)
                 return
 
-            progressValue += 0.01 // 10 seconds
+            progressValue += 0.01 // Increment progress
 
             if (progressValue > 1.0)
                 progressValue = 1.0
@@ -47,9 +60,13 @@ Item {
                 progressFinished = true
                 autoCloseTimer.stop()
 
+                // Check speed immediately upon finishing initial load
                 speedValue = Number(appCore.speed)
                 if (speedValue > 0) {
-                    hide()
+                    // Start the 10s countdown if moving
+                    if (!speedCloseTimer.running) {
+                        speedCloseTimer.start()
+                    }
                 }
             }
         }
@@ -61,6 +78,8 @@ Item {
         function onSpeedChanged() {
             if (!visible)
                 return
+
+            // Only enforce speed checks after the initial loading phase
             if (!progressFinished)
                 return
 
@@ -68,7 +87,15 @@ Item {
             speedValue = v
 
             if (v > 0) {
-                hide()
+                // Vehicle is moving: Start the 10s countdown to close
+                if (!speedCloseTimer.running) {
+                    speedCloseTimer.start()
+                }
+            } else {
+                // Vehicle stopped: Cancel the countdown (user can keep reading)
+                if (speedCloseTimer.running) {
+                    speedCloseTimer.stop()
+                }
             }
         }
     }
@@ -97,7 +124,7 @@ Item {
             // Existing logic
             refreshData()
 
-            // Added Auto-close logic
+            // Reset Auto-close logic
             progressValue = 0
             progressActive = true
             progressFinished = false
@@ -108,6 +135,9 @@ Item {
             // Stop logic on hide
             progressActive = false
             autoCloseTimer.stop()
+
+            // NEW: Ensure speed timer stops if closed manually
+            speedCloseTimer.stop()
         }
     }
 
@@ -568,7 +598,7 @@ Item {
 
                     // --- START DATE ROW ---
                     RowLayout {
-                        spacing: 12
+                        spacing: 10
                         anchors.right: vSep.left
                         anchors.rightMargin: 30
                         anchors.verticalCenter: vSep.verticalCenter
@@ -637,7 +667,7 @@ Item {
 
                     // --- END DATE ROW ---
                     RowLayout {
-                        spacing: 12
+                        spacing: 10
                         anchors.left: vSep.right
                         anchors.leftMargin: 30
                         anchors.verticalCenter: vSep.verticalCenter
@@ -718,7 +748,7 @@ Item {
                                    || parent.hovered ? "white" : "transparent"
                             border.color: "white"
                             radius: 10
-                            opacity: 1 // Changed from 0.8 based on context, usually cleaner
+                            opacity: 1
                         }
                         contentItem: Text {
                             text: parent.text

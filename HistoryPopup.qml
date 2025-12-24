@@ -118,10 +118,25 @@ Item {
     }
 
     function hide() {
+        // 1. Start Fade Out
         opacity = 0
-        tableList.contentY = 0
         hideTimer.start()
+
+        // 2. Reset Filter Popup Visibility
         filterPopup.visible = false
+
+        // 3. Reset Scroll Position
+        tableList.contentY = 0
+
+        // 4. Reset Date Picker Indices (Reset values)
+        startDayIndex = 0
+        startMonthIndex = 0
+        startYearIndex = 0
+        endDayIndex = 0
+        endMonthIndex = 0
+        endYearIndex = 0
+
+        // 5. Clear C++ Filter if applied
         if (isFiltered && typeof auditModel !== "undefined") {
             auditModel.clearFilter()
             isFiltered = false
@@ -205,15 +220,14 @@ Item {
                         visibleItemCount: 3
 
                         delegate: Text {
-                            // === FIX IS HERE ===
-                            // If modelData > 100 (it's a Year like 2025), show as is.
-                            // If modelData < 100 (it's an index 0-30), add 1 and pad.
+                            // Fix: Pad numbers < 100, leave years > 100 as is
                             text: (typeof modelData
                                    === "number") ? (modelData
                                                     > 100 ? modelData : root.pad(
                                                                 modelData + 1)) : modelData
 
                             color: "white"
+                            font.family: "Roboto" // Added Roboto
                             font.pixelSize: 50
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -258,6 +272,7 @@ Item {
                     contentItem: Text {
                         text: parent.text
                         color: parent.down ? "#007D99" : "white"
+                        font.family: "Roboto"
                         font.pixelSize: 24
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -316,6 +331,7 @@ Item {
             contentItem: Text {
                 text: parent.displayValue
                 color: "white"
+                font.family: "Roboto" // <--- Added Roboto for the numbers
                 font.bold: true
                 font.pixelSize: 32
                 horizontalAlignment: Text.AlignHCenter
@@ -495,6 +511,7 @@ Item {
         Rectangle {
             id: filterPopup
             visible: false
+            // INCREASED WIDTH to prevent "From" word cutoff on wider screens
             width: 1054
             height: 285
             radius: 24
@@ -522,7 +539,6 @@ Item {
 
             property var yearModel: {
                 var arr = []
-                // 2. Increase the loop limit (e.g., to 30) to cover more years (2020 to 2049)
                 for (var i = 0; i < 30; i++)
                     arr.push(root.baseYear + i)
                 return arr
@@ -548,7 +564,7 @@ Item {
 
                     // --- START DATE ROW ---
                     RowLayout {
-                        spacing: 15
+                        spacing: 12 // Reduced spacing slightly to help fit
                         anchors.right: vSep.left
                         anchors.rightMargin: 30
                         anchors.verticalCenter: vSep.verticalCenter
@@ -608,7 +624,7 @@ Item {
 
                     // --- END DATE ROW ---
                     RowLayout {
-                        spacing: 15
+                        spacing: 12 // Reduced spacing slightly
                         anchors.left: vSep.right
                         anchors.leftMargin: 30
                         anchors.verticalCenter: vSep.verticalCenter
@@ -675,15 +691,21 @@ Item {
                         text: "Cancel"
                         width: 478
                         height: 74
+                        // === HOVERED EFFECT ADDED ===
                         background: Rectangle {
-                            color: parent.down ? "white" : "transparent"
+                            color: parent.down
+                                   || parent.hovered ? "white" : "transparent"
                             border.color: "white"
                             radius: 10
                             opacity: 0.8
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: parent.down ? "#007D99" : "white"
+                            // === HOVERED TEXT COLOR CHANGE ===
+                            color: parent.down
+                                   || parent.hovered ? "#007D99" : "white"
+                            font.family: "Roboto"
+                            font.weight: Font.Medium
                             font.pixelSize: 26
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
@@ -694,15 +716,21 @@ Item {
                         text: "Submit"
                         width: 478
                         height: 74
+                        // === HOVERED EFFECT ADDED ===
                         background: Rectangle {
-                            color: parent.down ? "white" : "transparent"
+                            color: parent.down
+                                   || parent.hovered ? "white" : "transparent"
                             border.color: "white"
                             radius: 10
                             opacity: 0.8
                         }
                         contentItem: Text {
                             text: parent.text
-                            color: parent.down ? "#007D99" : "white"
+                            // === HOVERED TEXT COLOR CHANGE ===
+                            color: parent.down
+                                   || parent.hovered ? "#007D99" : "white"
+                            font.family: "Roboto"
+                            font.weight: Font.Medium
                             font.pixelSize: 26
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter

@@ -22,6 +22,57 @@ Item {
 
     property int baseYear: 2020
 
+    // === ADDED: AUTOCLOSE LOGIC ===
+    property real progressValue: 0
+    property bool progressActive: false
+    property bool progressFinished: false
+    property real speedValue: 0
+
+    Timer {
+        id: autoCloseTimer
+        interval: 100
+        repeat: true
+
+        onTriggered: {
+            if (!progressActive)
+                return
+
+            progressValue += 0.01 // 10 seconds
+
+            if (progressValue > 1.0)
+                progressValue = 1.0
+
+            if (progressValue >= 1.0) {
+                progressActive = false
+                progressFinished = true
+                autoCloseTimer.stop()
+
+                speedValue = Number(appCore.speed)
+                if (speedValue > 0) {
+                    hide()
+                }
+            }
+        }
+    }
+
+    Connections {
+        target: appCore
+
+        function onSpeedChanged() {
+            if (!visible)
+                return
+            if (!progressFinished)
+                return
+
+            var v = Number(appCore.speed)
+            speedValue = v
+
+            if (v > 0) {
+                hide()
+            }
+        }
+    }
+
     // === C++ INTERFACE ===
     function refreshData() {
         if (typeof auditModel !== "undefined")
@@ -40,8 +91,25 @@ Item {
         return n < 10 ? "0" + n : n
     }
 
-    onVisibleChanged: if (visible)
-                          refreshData()
+    // === MODIFIED: onVisibleChanged ===
+    onVisibleChanged: {
+        if (visible) {
+            // Existing logic
+            refreshData()
+
+            // Added Auto-close logic
+            progressValue = 0
+            progressActive = true
+            progressFinished = false
+            autoCloseTimer.start()
+
+            speedValue = Number(appCore.speed)
+        } else {
+            // Stop logic on hide
+            progressActive = false
+            autoCloseTimer.stop()
+        }
+    }
 
     // === POPUP ANIMATION (FADE ONLY) ===
     function show() {

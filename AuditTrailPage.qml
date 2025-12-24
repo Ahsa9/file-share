@@ -162,16 +162,23 @@ Rectangle {
         color: "#AA000000"
         z: 200
         visible: false
+        opacity: 0
 
-        // Removed opacity behavior here too for instant feel
         property var currentModel: 1
         property int tempIndex: 0
         property var updateCallback: null
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: 200
+            }
+        }
 
         MouseArea {
             anchors.fill: parent
             onClicked: bigSlotPopup.close()
         }
+
         Rectangle {
             width: 250
             height: 375
@@ -180,13 +187,20 @@ Rectangle {
             border.color: "white"
             border.width: 2
             anchors.centerIn: parent
+
+            MouseArea {
+                anchors.fill: parent
+            }
+
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 20
                 spacing: 20
+
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+
                     Tumbler {
                         id: bigTumbler
                         anchors.centerIn: parent
@@ -194,9 +208,16 @@ Rectangle {
                         height: parent.height
                         model: bigSlotPopup.currentModel
                         visibleItemCount: 3
+
                         delegate: Text {
-                            text: (typeof modelData === "number") ? root.pad(
-                                                                        modelData + 1) : modelData
+                            // === FIX IS HERE ===
+                            // If modelData > 100 (it's a Year like 2025), show as is.
+                            // If modelData < 100 (it's an index 0-30), add 1 and pad.
+                            text: (typeof modelData
+                                   === "number") ? (modelData
+                                                    > 100 ? modelData : root.pad(
+                                                                modelData + 1)) : modelData
+
                             color: "white"
                             font.pixelSize: 50
                             font.bold: true
@@ -204,9 +225,31 @@ Rectangle {
                             verticalAlignment: Text.AlignVCenter
                             opacity: 1.0 - Math.abs(Tumbler.displacement)
                                      / (Tumbler.tumbler.visibleItemCount / 2)
+                            scale: 1.0 - Math.abs(Tumbler.displacement)
+                                   / (Tumbler.tumbler.visibleItemCount / 1.5)
+                        }
+
+                        background: Rectangle {
+                            anchors.fill: parent
+                            color: "transparent"
+                            Rectangle {
+                                width: parent.width * 0.6
+                                height: 2
+                                color: "#0FE6EF"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                y: (parent.height / 2) - 35
+                            }
+                            Rectangle {
+                                width: parent.width * 0.6
+                                height: 2
+                                color: "#0FE6EF"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                y: (parent.height / 2) + 35
+                            }
                         }
                     }
                 }
+
                 Button {
                     text: "OK"
                     Layout.preferredWidth: 200
@@ -225,21 +268,26 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        if (bigSlotPopup.updateCallback)
+                        if (bigSlotPopup.updateCallback) {
                             bigSlotPopup.updateCallback(bigTumbler.currentIndex)
+                        }
                         bigSlotPopup.close()
                     }
                 }
             }
         }
+
         function open(dataModel, initialIndex, callback) {
             currentModel = dataModel
             bigTumbler.positionViewAtIndex(initialIndex, Tumbler.Center)
             bigTumbler.currentIndex = initialIndex
             updateCallback = callback
             visible = true
+            opacity = 1
         }
+
         function close() {
+            opacity = 0
             visible = false
         }
     }
@@ -424,6 +472,9 @@ Rectangle {
     // ==========================================================
     // === FILTER POPUP ===
     // ==========================================================
+    // ==========================================================
+    // === FILTER POPUP (Restored Style) ===
+    // ==========================================================
     Rectangle {
         id: filterPopup
         visible: false
@@ -434,8 +485,10 @@ Rectangle {
         anchors.centerIn: parent
         z: 100
         clip: true
-        border.color: "white"
-        border.width: 2
+        border.color: "#FFFFFF"
+        border.width: 1
+
+        // Shadow Effect
         layer.enabled: true
         layer.effect: DropShadow {
             horizontalOffset: 0
@@ -444,9 +497,12 @@ Rectangle {
             samples: 24
             color: "#40000000"
         }
+
         MouseArea {
             anchors.fill: parent
         }
+
+        // --- RESOURCES ---
         Component {
             id: colonSeparator
             Text {
@@ -458,19 +514,28 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
             }
         }
+
         property var yearModel: {
             var arr = []
-            for (var i = 0; i < 20; i++)
+            // Generates 30 years starting from baseYear (e.g., 2020-2049)
+            for (var i = 0; i < 30; i++)
                 arr.push(root.baseYear + i)
             return arr
         }
 
+        // --- MAIN LAYOUT ---
+        // We use a ColumnLayout to separate the Date Pickers from the Action Buttons
         ColumnLayout {
-            anchors.centerIn: parent
-            spacing: 40
+            anchors.fill: parent
+            anchors.topMargin: 66 // Push down to vertically center the date row
+            spacing: 66 // Gap between dates and buttons
+
+            // 1. DATE SELECTION ROW
             Item {
                 Layout.preferredWidth: filterPopup.width
                 Layout.preferredHeight: 60
+
+                // Vertical Divider Line (Centered)
                 Rectangle {
                     id: vSep
                     width: 2
@@ -478,24 +543,31 @@ Rectangle {
                     color: Qt.rgba(1, 1, 1, 0.2)
                     anchors.centerIn: parent
                 }
+
+                // --- FROM SECTION (Left of Divider) ---
                 RowLayout {
                     spacing: 15
                     anchors.right: vSep.left
                     anchors.rightMargin: 30
                     anchors.verticalCenter: vSep.verticalCenter
+
                     Text {
                         text: "From"
-                        color: "#0FE6EF"
+                        color: "#0FE6EF" // Cyan Accent
                         font.family: "Roboto"
                         font.pixelSize: 40
                     }
+
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
                             item.slotModel = 31
-                            item.slotIndex = Qt.binding(
-                                        () => root.startDayIndex)
-                            item.confirmCallback = idx => root.startDayIndex = idx
+                            item.slotIndex = Qt.binding(function () {
+                                return root.startDayIndex
+                            })
+                            item.confirmCallback = function (idx) {
+                                root.startDayIndex = idx
+                            }
                         }
                     }
                     Loader {
@@ -505,9 +577,12 @@ Rectangle {
                         sourceComponent: dateSlotButton
                         onLoaded: {
                             item.slotModel = 12
-                            item.slotIndex = Qt.binding(
-                                        () => root.startMonthIndex)
-                            item.confirmCallback = idx => root.startMonthIndex = idx
+                            item.slotIndex = Qt.binding(function () {
+                                return root.startMonthIndex
+                            })
+                            item.confirmCallback = function (idx) {
+                                root.startMonthIndex = idx
+                            }
                         }
                     }
                     Loader {
@@ -517,31 +592,43 @@ Rectangle {
                         sourceComponent: dateSlotButton
                         onLoaded: {
                             item.slotModel = filterPopup.yearModel
-                            item.displayValue = Qt.binding(
-                                        () => root.baseYear + root.startYearIndex)
-                            item.slotIndex = Qt.binding(
-                                        () => root.startYearIndex)
-                            item.confirmCallback = idx => root.startYearIndex = idx
+                            item.displayValue = Qt.binding(function () {
+                                return filterPopup.yearModel[root.startYearIndex]
+                            })
+                            item.slotIndex = Qt.binding(function () {
+                                return root.startYearIndex
+                            })
+                            item.confirmCallback = function (idx) {
+                                root.startYearIndex = idx
+                            }
                         }
                     }
                 }
+
+                // --- TO SECTION (Right of Divider) ---
                 RowLayout {
                     spacing: 15
                     anchors.left: vSep.right
                     anchors.leftMargin: 30
                     anchors.verticalCenter: vSep.verticalCenter
+
                     Text {
                         text: "To"
-                        color: "#0FE6EF"
+                        color: "#0FE6EF" // Cyan Accent
                         font.family: "Roboto"
                         font.pixelSize: 40
                     }
+
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
                             item.slotModel = 31
-                            item.slotIndex = Qt.binding(() => root.endDayIndex)
-                            item.confirmCallback = idx => root.endDayIndex = idx
+                            item.slotIndex = Qt.binding(function () {
+                                return root.endDayIndex
+                            })
+                            item.confirmCallback = function (idx) {
+                                root.endDayIndex = idx
+                            }
                         }
                     }
                     Loader {
@@ -551,9 +638,12 @@ Rectangle {
                         sourceComponent: dateSlotButton
                         onLoaded: {
                             item.slotModel = 12
-                            item.slotIndex = Qt.binding(
-                                        () => root.endMonthIndex)
-                            item.confirmCallback = idx => root.endMonthIndex = idx
+                            item.slotIndex = Qt.binding(function () {
+                                return root.endMonthIndex
+                            })
+                            item.confirmCallback = function (idx) {
+                                root.endMonthIndex = idx
+                            }
                         }
                     }
                     Loader {
@@ -563,58 +653,75 @@ Rectangle {
                         sourceComponent: dateSlotButton
                         onLoaded: {
                             item.slotModel = filterPopup.yearModel
-                            item.displayValue = Qt.binding(
-                                        () => root.baseYear + root.endYearIndex)
-                            item.slotIndex = Qt.binding(() => root.endYearIndex)
-                            item.confirmCallback = idx => root.endYearIndex = idx
+                            item.displayValue = Qt.binding(function () {
+                                return filterPopup.yearModel[root.endYearIndex]
+                            })
+                            item.slotIndex = Qt.binding(function () {
+                                return root.endYearIndex
+                            })
+                            item.confirmCallback = function (idx) {
+                                root.endYearIndex = idx
+                            }
                         }
                     }
                 }
             }
+
+            // 2. ACTION BUTTONS ROW
             Row {
                 Layout.alignment: Qt.AlignHCenter
-                spacing: 40
+                spacing: 20
+
+                // CANCEL BUTTON
                 Button {
                     text: "Cancel"
-                    width: 200
-                    height: 60
+                    width: 478
+                    height: 74
                     background: Rectangle {
-                        color: parent.down ? "#eee" : "transparent"
+                        color: parent.down ? "white" : "transparent"
                         border.color: "white"
                         radius: 10
+                        opacity: 0.8
                     }
                     contentItem: Text {
                         text: parent.text
                         color: parent.down ? "#007D99" : "white"
-                        font.pixelSize: 24
+                        font.pixelSize: 26
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: filterPopup.visible = false
                 }
+
+                // SUBMIT BUTTON
                 Button {
                     text: "Submit"
-                    width: 200
-                    height: 60
+                    width: 478
+                    height: 74
                     background: Rectangle {
-                        color: parent.down ? "#eee" : "transparent"
+                        color: parent.down ? "white" : "transparent"
                         border.color: "white"
                         radius: 10
+                        opacity: 0.8
                     }
                     contentItem: Text {
                         text: parent.text
                         color: parent.down ? "#007D99" : "white"
-                        font.pixelSize: 24
+                        font.pixelSize: 26
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
                         var sD = root.pad(root.startDayIndex + 1)
                         var sM = root.pad(root.startMonthIndex + 1)
-                        var sY = root.baseYear + root.startYearIndex
+                        // LOGIC FIX: Access array directly to prevent off-by-one errors
+                        var sY = filterPopup.yearModel[root.startYearIndex]
+
                         var eD = root.pad(root.endDayIndex + 1)
                         var eM = root.pad(root.endMonthIndex + 1)
-                        var eY = root.baseYear + root.endYearIndex
+                        // LOGIC FIX: Access array directly
+                        var eY = filterPopup.yearModel[root.endYearIndex]
+
                         filterByDateRange(sD + "/" + sM + "/" + sY,
                                           eD + "/" + eM + "/" + eY)
                         filterPopup.visible = false

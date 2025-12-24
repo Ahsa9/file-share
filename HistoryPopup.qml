@@ -47,11 +47,9 @@ Item {
     function show() {
         visible = true
         opacity = 1
-        // Removed Y calculation logic
     }
 
     function hide() {
-        // Removed Y movement logic
         opacity = 0
         tableList.contentY = 0
         hideTimer.start()
@@ -139,8 +137,14 @@ Item {
                         visibleItemCount: 3
 
                         delegate: Text {
-                            text: (typeof modelData === "number") ? root.pad(
-                                                                        modelData + 1) : modelData
+                            // === FIX IS HERE ===
+                            // If modelData > 100 (it's a Year like 2025), show as is.
+                            // If modelData < 100 (it's an index 0-30), add 1 and pad.
+                            text: (typeof modelData
+                                   === "number") ? (modelData
+                                                    > 100 ? modelData : root.pad(
+                                                                modelData + 1)) : modelData
+
                             color: "white"
                             font.pixelSize: 50
                             font.bold: true
@@ -262,9 +266,8 @@ Item {
         width: 1859
         height: 550
 
-        // CHANGED: Fixed positioning instead of dynamic Y
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: -45 // Keeps the position you originally calculated
+        anchors.verticalCenterOffset: -45
 
         radius: 40
         color: Qt.rgba(0, 0.49, 0.60, 0.8)
@@ -275,7 +278,6 @@ Item {
             anchors.fill: parent
         }
 
-        // REMOVED: Behavior on y { ... }
         Column {
             anchors.fill: parent
             anchors.margins: 40
@@ -452,7 +454,8 @@ Item {
 
             property var yearModel: {
                 var arr = []
-                for (var i = 0; i < 20; i++)
+                // 2. Increase the loop limit (e.g., to 30) to cover more years (2020 to 2049)
+                for (var i = 0; i < 30; i++)
                     arr.push(root.baseYear + i)
                 return arr
             }
@@ -639,10 +642,10 @@ Item {
                         onClicked: {
                             var sD = root.pad(root.startDayIndex + 1)
                             var sM = root.pad(root.startMonthIndex + 1)
-                            var sY = root.baseYear + root.startYearIndex
                             var eD = root.pad(root.endDayIndex + 1)
                             var eM = root.pad(root.endMonthIndex + 1)
-                            var eY = root.baseYear + root.endYearIndex
+                            var sY = filterPopup.yearModel[root.startYearIndex]
+                            var eY = filterPopup.yearModel[root.endYearIndex]
 
                             filterByDateRange(sD + "/" + sM + "/" + sY,
                                               eD + "/" + eM + "/" + eY)

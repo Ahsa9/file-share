@@ -186,6 +186,8 @@ Item {
 
         MouseArea {
             anchors.fill: parent
+            hoverEnabled: true
+            preventStealing: true
             onClicked: bigSlotPopup.close()
         }
 
@@ -227,7 +229,7 @@ Item {
                                                                 modelData + 1)) : modelData
 
                             color: "white"
-                            font.family: "Roboto" // Added Roboto
+                            font.family: "Roboto"
                             font.pixelSize: 50
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -265,13 +267,15 @@ Item {
                     Layout.preferredHeight: 60
                     Layout.alignment: Qt.AlignHCenter
                     background: Rectangle {
-                        color: parent.down ? "white" : "#007D99"
+                        color: parent.down
+                               || parent.hovered ? "white" : "transparent"
                         radius: 10
                         border.color: "white"
                     }
                     contentItem: Text {
                         text: parent.text
-                        color: parent.down ? "#007D99" : "white"
+                        color: parent.down
+                               || parent.hovered ? "#007D99" : "white"
                         font.family: "Roboto"
                         font.pixelSize: 24
                         horizontalAlignment: Text.AlignHCenter
@@ -313,6 +317,7 @@ Item {
             property string displayValue: root.pad(slotIndex + 1)
             property var confirmCallback: null
 
+            // Default values, can be overridden by Loader
             width: 90
             height: 60
 
@@ -331,7 +336,7 @@ Item {
             contentItem: Text {
                 text: parent.displayValue
                 color: "white"
-                font.family: "Roboto" // <--- Added Roboto for the numbers
+                font.family: "Roboto"
                 font.bold: true
                 font.pixelSize: 32
                 horizontalAlignment: Text.AlignHCenter
@@ -511,8 +516,7 @@ Item {
         Rectangle {
             id: filterPopup
             visible: false
-            // INCREASED WIDTH to prevent "From" word cutoff on wider screens
-            width: 1054
+            width: 1054 // Widened to prevent text cutoff
             height: 285
             radius: 24
             color: "#007D99"
@@ -564,7 +568,7 @@ Item {
 
                     // --- START DATE ROW ---
                     RowLayout {
-                        spacing: 12 // Reduced spacing slightly to help fit
+                        spacing: 12
                         anchors.right: vSep.left
                         anchors.rightMargin: 30
                         anchors.verticalCenter: vSep.verticalCenter
@@ -575,9 +579,12 @@ Item {
                             font.pixelSize: 40
                         }
 
+                        // Day: 74x47
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
+                                item.width = 74
+                                item.height = 47
                                 item.slotModel = 31
                                 item.slotIndex = Qt.binding(function () {
                                     return root.startDayIndex
@@ -590,9 +597,12 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
+                        // Month: 90x47
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
+                                item.width = 90
+                                item.height = 47
                                 item.slotModel = 12
                                 item.slotIndex = Qt.binding(function () {
                                     return root.startMonthIndex
@@ -605,9 +615,12 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
+                        // Year: 89x47
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
+                                item.width = 89
+                                item.height = 47
                                 item.slotModel = filterPopup.yearModel
                                 item.displayValue = Qt.binding(function () {
                                     return root.baseYear + root.startYearIndex
@@ -624,7 +637,7 @@ Item {
 
                     // --- END DATE ROW ---
                     RowLayout {
-                        spacing: 12 // Reduced spacing slightly
+                        spacing: 12
                         anchors.left: vSep.right
                         anchors.leftMargin: 30
                         anchors.verticalCenter: vSep.verticalCenter
@@ -635,9 +648,12 @@ Item {
                             font.pixelSize: 40
                         }
 
+                        // Day: 74x47
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
+                                item.width = 74
+                                item.height = 47
                                 item.slotModel = 31
                                 item.slotIndex = Qt.binding(function () {
                                     return root.endDayIndex
@@ -650,9 +666,12 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
+                        // Month: 90x47
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
+                                item.width = 90
+                                item.height = 47
                                 item.slotModel = 12
                                 item.slotIndex = Qt.binding(function () {
                                     return root.endMonthIndex
@@ -665,9 +684,12 @@ Item {
                         Loader {
                             sourceComponent: colonSeparator
                         }
+                        // Year: 89x47
                         Loader {
                             sourceComponent: dateSlotButton
                             onLoaded: {
+                                item.width = 89
+                                item.height = 47
                                 item.slotModel = filterPopup.yearModel
                                 item.displayValue = Qt.binding(function () {
                                     return root.baseYear + root.endYearIndex
@@ -691,17 +713,15 @@ Item {
                         text: "Cancel"
                         width: 478
                         height: 74
-                        // === HOVERED EFFECT ADDED ===
                         background: Rectangle {
                             color: parent.down
                                    || parent.hovered ? "white" : "transparent"
                             border.color: "white"
                             radius: 10
-                            opacity: 0.8
+                            opacity: 1 // Changed from 0.8 based on context, usually cleaner
                         }
                         contentItem: Text {
                             text: parent.text
-                            // === HOVERED TEXT COLOR CHANGE ===
                             color: parent.down
                                    || parent.hovered ? "#007D99" : "white"
                             font.family: "Roboto"
@@ -716,17 +736,15 @@ Item {
                         text: "Submit"
                         width: 478
                         height: 74
-                        // === HOVERED EFFECT ADDED ===
                         background: Rectangle {
                             color: parent.down
                                    || parent.hovered ? "white" : "transparent"
                             border.color: "white"
                             radius: 10
-                            opacity: 0.8
+                            opacity: 1
                         }
                         contentItem: Text {
                             text: parent.text
-                            // === HOVERED TEXT COLOR CHANGE ===
                             color: parent.down
                                    || parent.hovered ? "#007D99" : "white"
                             font.family: "Roboto"

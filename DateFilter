@@ -1,0 +1,289 @@
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
+
+Rectangle {
+    id: filterPopup
+    width: 1054
+    height: 285
+    radius: 24
+    color: "#007D99"
+    z: 100
+    border.color: "#FFFFFF"
+    border.width: 1
+
+    // Signals to communicate with main code
+    signal cancelClicked
+    signal submitClicked(string startDate, string endDate)
+
+    // --- CALENDAR LOGIC FUNCTIONS ---
+    function getDaysInMonth(monthIndex, year) {
+        // monthIndex is 0-11 (Jan-Dec)
+        return new Date(year, monthIndex + 1, 0).getDate()
+    }
+
+    function pad(n) {
+        return n < 10 ? "0" + n : n
+    }
+
+    // Internal model for years
+    property var yearModel: {
+        var arr = []
+        for (var i = 0; i < 30; i++)
+            arr.push(root.baseYear + i)
+        return arr
+    }
+
+    // Shield MouseArea
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: true
+    }
+
+    // Component for the ":"
+    Component {
+        id: colonSeparator
+        Item {
+            width: 18
+            height: 47
+            Text {
+                text: ":"
+                color: "white"
+                font.bold: true
+                font.pixelSize: 50
+                anchors.centerIn: parent
+                verticalAlignment: Text.AlignVCenter
+            }
+        }
+    }
+
+    // --- DATE SELECTION SLOTS ---
+    Rectangle {
+        id: slotsContainer
+        width: 990
+        height: 115
+        color: "transparent"
+        anchors.top: parent.top
+        anchors.topMargin: 32
+        anchors.left: parent.left
+        anchors.leftMargin: 64
+
+        Row {
+            id: dateSelectionRow
+            spacing: 79
+            anchors.verticalCenter: parent.verticalCenter
+
+            // --- FROM SECTION ---
+            Row {
+                spacing: 32
+                anchors.verticalCenter: parent.verticalCenter
+                Text {
+                    text: "From"
+                    color: "#0FE6EF"
+                    font.family: "Roboto"
+                    font.pixelSize: 40
+                }
+                Row {
+                    spacing: 10
+                    // Day Loader
+                    Loader {
+                        sourceComponent: dateSlotButton
+                        onLoaded: {
+                            item.width = 74
+                            // Logic: Get days based on currently selected Month/Year
+                            item.slotModel = Qt.binding(
+                                        () => getDaysInMonth(
+                                            root.startMonthIndex,
+                                            yearModel[root.startYearIndex]))
+                            item.slotIndex = Qt.binding(
+                                        () => root.startDayIndex)
+                            item.confirmCallback = function (idx) {
+                                root.startDayIndex = idx
+                            }
+                        }
+                    }
+                    Loader {
+                        sourceComponent: colonSeparator
+                    }
+                    // Month Loader
+                    Loader {
+                        sourceComponent: dateSlotButton
+                        onLoaded: {
+                            item.width = 90
+                            item.slotModel = 12
+                            item.slotIndex = Qt.binding(
+                                        () => root.startMonthIndex)
+                            item.confirmCallback = function (idx) {
+                                root.startMonthIndex = idx
+                                // Validation: if month changed to one with fewer days, clamp the day index
+                                var maxDays = getDaysInMonth(
+                                            idx, yearModel[root.startYearIndex])
+                                if (root.startDayIndex >= maxDays)
+                                    root.startDayIndex = maxDays - 1
+                            }
+                        }
+                    }
+                    Loader {
+                        sourceComponent: colonSeparator
+                    }
+                    // Year Loader
+                    Loader {
+                        sourceComponent: dateSlotButton
+                        onLoaded: {
+                            item.width = 89
+                            item.slotModel = filterPopup.yearModel
+                            item.displayValue = Qt.binding(
+                                        () => yearModel[root.startYearIndex])
+                            item.slotIndex = Qt.binding(
+                                        () => root.startYearIndex)
+                            item.confirmCallback = function (idx) {
+                                root.startYearIndex = idx
+                                // Validation: Check leap year if Feb 29 is selected
+                                var maxDays = getDaysInMonth(
+                                            root.startMonthIndex,
+                                            yearModel[idx])
+                                if (root.startDayIndex >= maxDays)
+                                    root.startDayIndex = maxDays - 1
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- TO SECTION ---
+            Row {
+                spacing: 25
+                anchors.verticalCenter: parent.verticalCenter
+                Text {
+                    text: "To"
+                    color: "#0FE6EF"
+                    font.family: "Roboto"
+                    font.pixelSize: 40
+                }
+                Row {
+                    spacing: 5
+                    // Day Loader
+                    Loader {
+                        sourceComponent: dateSlotButton
+                        onLoaded: {
+                            item.width = 74
+                            item.slotModel = Qt.binding(
+                                        () => getDaysInMonth(
+                                            root.endMonthIndex,
+                                            yearModel[root.endYearIndex]))
+                            item.slotIndex = Qt.binding(() => root.endDayIndex)
+                            item.confirmCallback = function (idx) {
+                                root.endDayIndex = idx
+                            }
+                        }
+                    }
+                    Loader {
+                        sourceComponent: colonSeparator
+                    }
+                    // Month Loader
+                    Loader {
+                        sourceComponent: dateSlotButton
+                        onLoaded: {
+                            item.width = 90
+                            item.slotModel = 12
+                            item.slotIndex = Qt.binding(
+                                        () => root.endMonthIndex)
+                            item.confirmCallback = function (idx) {
+                                root.endMonthIndex = idx
+                                var maxDays = getDaysInMonth(
+                                            idx, yearModel[root.endYearIndex])
+                                if (root.endDayIndex >= maxDays)
+                                    root.endDayIndex = maxDays - 1
+                            }
+                        }
+                    }
+                    Loader {
+                        sourceComponent: colonSeparator
+                    }
+                    // Year Loader
+                    Loader {
+                        sourceComponent: dateSlotButton
+                        onLoaded: {
+                            item.width = 89
+                            item.slotModel = filterPopup.yearModel
+                            item.displayValue = Qt.binding(
+                                        () => yearModel[root.endYearIndex])
+                            item.slotIndex = Qt.binding(() => root.endYearIndex)
+                            item.confirmCallback = function (idx) {
+                                root.endYearIndex = idx
+                                var maxDays = getDaysInMonth(
+                                            root.endMonthIndex, yearModel[idx])
+                                if (root.endDayIndex >= maxDays)
+                                    root.endDayIndex = maxDays - 1
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // --- BOTTOM BUTTONS ---
+    Rectangle {
+        id: buttonsContainer
+        width: 966
+        height: 74
+        color: "transparent"
+        anchors.top: slotsContainer.bottom
+        anchors.topMargin: 32
+        anchors.horizontalCenter: parent.horizontalCenter
+
+        Row {
+            anchors.centerIn: parent
+            spacing: 8
+            Button {
+                text: "Cancel"
+                width: 479
+                height: 74
+                background: Rectangle {
+                    color: parent.down
+                           || parent.hovered ? "white" : "transparent"
+                    border.color: "white"
+                    radius: 10
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: parent.down || parent.hovered ? "#007D99" : "white"
+                    font.family: "Roboto"
+                    font.pixelSize: 26
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: cancelClicked()
+            }
+            Button {
+                text: "Submit"
+                width: 479
+                height: 74
+                background: Rectangle {
+                    color: parent.down
+                           || parent.hovered ? "white" : "transparent"
+                    border.color: "white"
+                    radius: 10
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: parent.down || parent.hovered ? "#007D99" : "white"
+                    font.family: "Roboto"
+                    font.pixelSize: 26
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                onClicked: {
+                    var sD = pad(root.startDayIndex + 1), sM = pad(
+                                                              root.startMonthIndex + 1)
+                    var eD = pad(root.endDayIndex + 1), eM = pad(
+                                                            root.endMonthIndex + 1)
+                    var sY = yearModel[root.startYearIndex], eY = yearModel[root.endYearIndex]
+                    submitClicked(sD + "/" + sM + "/" + sY,
+                                  eD + "/" + eM + "/" + eY)
+                }
+            }
+        }
+    }
+}

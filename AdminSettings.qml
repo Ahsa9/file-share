@@ -10,12 +10,44 @@ Rectangle {
 
     signal requestClose
 
+    // ==========================================================
+    // === SUB-PAGES DECLARATION ===
+    // ==========================================================
+
+    // 1. AUDIT PAGE
+    AuditTrailPage {
+        id: auditPage
+        anchors.fill: parent
+        z: 100
+        visible: false
+        onClosePage: console.log("Audit page closed")
+    }
+
+    // 2. TOTALIZERS PAGE
+    TotalizersPage {
+        id: totalizersPage
+        anchors.fill: parent
+        z: 100
+        visible: false
+        onClosePage: console.log("Totalizers page closed")
+    }
+
+    // 3. TARRIF PAGE (NEW ADDITION)
+    // Ensure the filename matches (e.g., TarrifPage.qml)
+    TarrifPage {
+        id: tarrifPage
+        anchors.fill: parent
+        z: 100
+        visible: false
+        onClosePage: console.log("Tarrif page closed")
+    }
+
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
         preventStealing: true
     }
-    // === UPDATED TOPBAR ===
+
     TopBar {
         id: headerBar
         anchors.top: parent.top
@@ -35,7 +67,8 @@ Rectangle {
                     "h": 192.70
                 }, {
                     "name": "TARRIF",
-                    "icon": "qrc:/images/c_Tarrif.png",
+                    "icon"// This key matches the logic below
+                    : "qrc:/images/c_Tarrif.png",
                     "w": 146.34,
                     "h": 167.57
                 }, {
@@ -76,23 +109,32 @@ Rectangle {
                         text: modelData.name
                         color: "#007D99"
                         Layout.alignment: Qt.AlignHCenter
-
-                        // --- UPDATED FONT PROPERTIES ---
                         font.family: "Roboto Condensed"
                         font.pixelSize: 40
-                        font.weight: Font.Bold // Equivalent to font-weight: 700
+                        font.weight: Font.Bold
                         font.letterSpacing: 0
-
-                        lineHeight: 1.0 // Equivalent to line-height: 100%
+                        lineHeight: 1.0
                         lineHeightMode: Text.ProportionalHeight
                     }
                 }
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: console.log("Clicked " + modelData.name)
                     onPressed: parent.opacity = 0.7
                     onReleased: parent.opacity = 1.0
+
+                    // === UPDATED ONCLICKED LOGIC ===
+                    onClicked: {
+                        if (modelData.name === "AUDIT TRAILS") {
+                            auditPage.show()
+                        } else if (modelData.name === "TOTALIZERS") {
+                            totalizersPage.show()
+                        } else if (modelData.name === "TARRIF") {
+                            tarrifPage.show() // Opens the newly created page
+                        } else {
+                            console.log("Clicked " + modelData.name)
+                        }
+                    }
                 }
             }
         }

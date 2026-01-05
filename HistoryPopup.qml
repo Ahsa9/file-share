@@ -1,6 +1,5 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.15
 import QtQuick.Layouts 1.15
 
 Item {
@@ -102,29 +101,20 @@ Item {
         opacity = 1
     }
 
-    // START FADING ONLY
     function hide() {
         opacity = 0
         hideTimer.start()
     }
 
-    // RESET EVERYTHING HERE (AFTER 400ms FADE)
     Timer {
         id: hideTimer
         interval: 400
         repeat: false
         onTriggered: {
-            // 1. Finalize visibility
             root.visible = false
-
-            // 2. Reset internal popups (so they aren't open next time)
             filterPopup.visible = false
             detailsPopup.visible = false
-
-            // 3. Reset table scroll
             tableList.contentY = 0
-
-            // 4. Reset date picker indices to 0
             startDayIndex = 0
             startMonthIndex = 0
             startYearIndex = 0
@@ -132,7 +122,6 @@ Item {
             endMonthIndex = 0
             endYearIndex = 0
 
-            // 5. Clear C++ Filters
             if (isFiltered && typeof auditModel !== "undefined") {
                 auditModel.clearFilter()
                 isFiltered = false
@@ -152,9 +141,7 @@ Item {
         onClicked: root.hide()
     }
 
-    // ==========================================================
     // === REUSABLE: 3-VALUE SELECTION WHEEL ===
-    // ==========================================================
     Rectangle {
         id: bigSlotPopup
         anchors.fill: parent
@@ -213,16 +200,19 @@ Item {
                                === "number") ? (modelData > 100 ? modelData : root.pad(
                                                                       modelData + 1)) : modelData
                         color: "white"
-                        font.bold: true
+                        font.family: "Roboto Condensed"
+                        font.styleName: "Bold"
+                        font.pixelSize: 55
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         scale: 1.0 - Math.abs(Tumbler.displacement) * 0.4
                         opacity: 1.0 - Math.abs(Tumbler.displacement) * 0.5
-                        font.pixelSize: 55
                     }
                 }
                 Button {
                     text: "OK"
+                    font.family: "Roboto"
+                    font.styleName: "Medium"
                     Layout.preferredWidth: 200
                     Layout.preferredHeight: 60
                     Layout.alignment: Qt.AlignHCenter
@@ -234,8 +224,9 @@ Item {
                     contentItem: Text {
                         text: "OK"
                         color: parent.down ? "#007D99" : "white"
+                        font.family: "Roboto"
+                        font.styleName: "Medium"
                         font.pixelSize: 28
-                        font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                     }
                     onClicked: {
@@ -249,9 +240,7 @@ Item {
         }
     }
 
-    // ==========================================================
-    // === CONFIG DETAILS POPUP ===
-    // ==========================================================
+    // === CONFIG DETAILS POPUP (JSON VIEWER) ===
     Rectangle {
         id: detailsPopup
         anchors.fill: parent
@@ -298,9 +287,10 @@ Item {
                     }
                     Text {
                         text: "AUDIT TRAIL"
+                        font.family: "Roboto"
+                        font.styleName: "Regular"
                         font.pixelSize: 40
                         color: "white"
-                        font.weight: Font.Medium
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
@@ -320,8 +310,9 @@ Item {
                     contentItem: Text {
                         text: closeBtn.text
                         color: closeBtn.down ? "#007D99" : "white"
+                        font.family: "Roboto"
+                        font.styleName: "Regular"
                         font.pixelSize: 28
-                        font.bold: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -345,22 +336,40 @@ Item {
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
+                anchors.bottomMargin: 20
                 clip: true
-                // HIDE SCROLLBARS HERE
-                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+
+                ScrollBar.vertical: ScrollBar {
+                    id: vBar
+                    parent: detailsScroll
+                    x: detailsScroll.width - width - 10
+                    active: vBar.active || vBar.pressed
+                    contentItem: Rectangle {
+                        implicitWidth: 6
+                        radius: 3
+                        color: "white"
+                        opacity: vBar.active ? 0.5 : 0.0
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: 200
+                            }
+                        }
+                    }
+                }
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                 TextArea {
                     text: detailsPopup.detailContent
                     color: "white"
-                    font.family: "Roboto Mono"
+                    font.family: "Roboto"
+                    font.styleName: "Regular"
                     font.pixelSize: 30
                     readOnly: true
                     wrapMode: Text.WordWrap
                     leftPadding: 40
                     rightPadding: 40
-                    topPadding: 1
-                    bottomPadding: 4
+                    topPadding: 15
+                    bottomPadding: 15
                     background: null
                 }
             }
@@ -380,8 +389,8 @@ Item {
         border.width: 1
         MouseArea {
             anchors.fill: parent
-            // We don't need onClicked code; simply existing here consumes the event.
         }
+
         Column {
             anchors.fill: parent
             anchors.margins: 40
@@ -397,9 +406,10 @@ Item {
                 }
                 Text {
                     text: "AUDIT TRAIL"
+                    font.family: "Roboto"
+                    font.styleName: "Regular"
                     font.pixelSize: 40
                     color: "white"
-                    font.weight: Font.Medium
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -411,11 +421,16 @@ Item {
                 Row {
                     anchors.fill: parent
                     component HeaderText: Text {
+                        font.family: "Roboto"
+                        font.styleName: "Medium" // Maps to Weight 500
                         font.pixelSize: 40
+                        lineHeight: 1.0 // Maps to 100%
                         color: "white"
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         height: parent.height
+                        // leading-trim is not a standard QML property,
+                        // but lineHeight 1.0 covers the 100% requirement.
                     }
                     HeaderText {
                         text: "No."
@@ -433,6 +448,8 @@ Item {
                             anchors.centerIn: parent
                             Text {
                                 text: "Date"
+                                font.family: "Roboto"
+                                font.styleName: "Medium"
                                 font.pixelSize: 40
                                 color: "white"
                             }
@@ -477,6 +494,8 @@ Item {
                     Row {
                         anchors.fill: parent
                         component CellText: Text {
+                            font.family: "Roboto"
+                            font.styleName: "Medium"
                             font.pixelSize: 32
                             color: "white"
                             verticalAlignment: Text.AlignVCenter
@@ -516,6 +535,8 @@ Item {
                                 contentItem: Text {
                                     text: parent.text
                                     color: parent.down ? "#007D99" : "white"
+                                    font.family: "Roboto"
+                                    font.styleName: "medium"
                                     font.pixelSize: 22
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter

@@ -21,12 +21,10 @@ Rectangle {
         var yesterday = new Date()
         yesterday.setDate(today.getDate() - 1)
 
-        // Yesterday
         root.startDayIndex = yesterday.getDate() - 1
         root.startMonthIndex = yesterday.getMonth()
         root.startYearIndex = yesterday.getFullYear() - root.baseYear
 
-        // Today
         root.endDayIndex = today.getDate() - 1
         root.endMonthIndex = today.getMonth()
         root.endYearIndex = today.getFullYear() - root.baseYear
@@ -53,49 +51,65 @@ Rectangle {
         hoverEnabled: true
     }
 
+    // === COLON SEPARATOR ===
+    // === COLON SEPARATOR (Updated to 40px/Condensed Bold) ===
     Component {
         id: colonSeparator
         Item {
-            width: 18
-            height: 47
+            width: 25 // Slightly wider to accommodate 40px font
+            height: 60
             Text {
                 text: ":"
                 color: "white"
-                font.bold: true
-                font.pixelSize: 50
+                font.family: "Roboto Condensed"
+                font.styleName: "Bold"
+                font.pixelSize: 40
                 anchors.centerIn: parent
+                horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
+                // line-height: 100% and leading-trim: NONE are
+                // default behaviors for QML Text within a fixed height Item.
             }
         }
     }
 
+    // === DATE SLOT BUTTON (Updated to your CSS Specs) ===
     Component {
         id: dateSlotButton
         Button {
+            id: slotBtn
             property var slotModel: 31
             property int slotIndex: 0
             property string displayValue: "01"
             property var confirmCallback: null
-            width: 90
-            height: 60
+            width: 100 // Increased width for 40px text
+            height: 70 // Increased height for 40px text
+
             background: Rectangle {
                 color: "#15000000"
                 border.color: "#AACCFF"
                 radius: 4
-                opacity: parent.down ? 0.5 : 1.0
+                opacity: slotBtn.down ? 0.5 : 1.0
             }
+
             contentItem: Text {
-                text: parent.displayValue
+                text: slotBtn.displayValue
                 color: "white"
-                font.bold: true
-                font.pixelSize: 32
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
+
+                // --- YOUR SPECS ---
+                font.family: "Roboto Condensed"
+                font.styleName: "Bold" // weight: 700 / style: Bold
+                font.pixelSize: 40 // font-size: 40px
+                font.letterSpacing: 0 // letter-spacing: 0%
+
+                horizontalAlignment: Text.AlignHCenter // text-align: center
+                verticalAlignment: Text.AlignVCenter // vertical-align: middle
+
+                // Note: QML Text uses pixelSize for exact 1:1 scaling from design tools.
             }
             onClicked: bigSlotPopup.open(slotModel, slotIndex, confirmCallback)
         }
     }
-
     Item {
         id: slotsContainer
         width: 990
@@ -109,13 +123,14 @@ Rectangle {
             spacing: 60
             anchors.centerIn: parent
 
-            // --- FROM SECTION (Yesterday) ---
+            // --- FROM SECTION ---
             Row {
                 spacing: 20
                 Text {
                     text: "From"
                     color: "#0FE6EF"
                     font.family: "Roboto"
+                    font.styleName: "Medium"
                     font.pixelSize: 40
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -176,13 +191,14 @@ Rectangle {
                 }
             }
 
-            // --- TO SECTION (Today) ---
+            // --- TO SECTION ---
             Row {
                 spacing: 20
                 Text {
                     text: "To"
                     color: "#0FE6EF"
                     font.family: "Roboto"
+                    font.styleName: "Medium"
                     font.pixelSize: 40
                     anchors.verticalCenter: parent.verticalCenter
                 }
@@ -243,6 +259,7 @@ Rectangle {
         }
     }
 
+    // === BOTTOM BUTTONS (REMAIN ROBOTO MEDIUM) ===
     Rectangle {
         id: buttonsContainer
         width: 966
@@ -255,18 +272,22 @@ Rectangle {
             anchors.centerIn: parent
             spacing: 12
             Button {
+                id: cancelBtn
                 text: "Cancel"
                 width: 460
                 height: 70
                 background: Rectangle {
-                    color: parent.down
-                           || parent.hovered ? "white" : "transparent"
+                    color: cancelBtn.down
+                           || cancelBtn.hovered ? "white" : "transparent"
                     border.color: "white"
                     radius: 10
                 }
                 contentItem: Text {
-                    text: parent.text
-                    color: parent.down || parent.hovered ? "#007D99" : "white"
+                    text: cancelBtn.text
+                    font.family: "Roboto"
+                    font.styleName: "Medium"
+                    color: cancelBtn.down
+                           || cancelBtn.hovered ? "#007D99" : "white"
                     font.pixelSize: 26
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -274,30 +295,33 @@ Rectangle {
                 onClicked: cancelClicked()
             }
             Button {
+                id: submitBtn
                 text: "Submit"
                 width: 460
                 height: 70
                 background: Rectangle {
-                    color: parent.down
-                           || parent.hovered ? "white" : "transparent"
+                    color: submitBtn.down
+                           || submitBtn.hovered ? "white" : "transparent"
                     border.color: "white"
                     radius: 10
                 }
                 contentItem: Text {
-                    text: parent.text
-                    color: parent.down || parent.hovered ? "#007D99" : "white"
+                    text: submitBtn.text
+                    font.family: "Roboto"
+                    font.styleName: "Medium"
+                    color: submitBtn.down
+                           || submitBtn.hovered ? "#007D99" : "white"
                     font.pixelSize: 26
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: {
-                    var sD = pad(root.startDayIndex
-                                 + 1), sM = pad(
-                                           root.startMonthIndex
-                                           + 1), sY = yearModel[root.startYearIndex]
-                    var eD = pad(root.endDayIndex + 1), eM = pad(
-                                                            root.endMonthIndex
-                                                            + 1), eY = yearModel[root.endYearIndex]
+                    var sD = pad(root.startDayIndex + 1)
+                    var sM = pad(root.startMonthIndex + 1)
+                    var sY = yearModel[root.startYearIndex]
+                    var eD = pad(root.endDayIndex + 1)
+                    var eM = pad(root.endMonthIndex + 1)
+                    var eY = yearModel[root.endYearIndex]
                     var startDateISO = sY + "-" + sM + "-" + sD
                     var endDateISO = eY + "-" + eM + "-" + eD
                     filterPopup.submitClicked(startDateISO, endDateISO)

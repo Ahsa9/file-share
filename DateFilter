@@ -12,13 +12,27 @@ Rectangle {
     border.color: "#FFFFFF"
     border.width: 1
 
-    // Signals to communicate with main code
     signal cancelClicked
     signal submitClicked(string startDate, string endDate)
 
-    // --- CALENDAR LOGIC FUNCTIONS ---
+    // === DATE INITIALIZATION ===
+    Component.onCompleted: {
+        var today = new Date()
+        var yesterday = new Date()
+        yesterday.setDate(today.getDate() - 1)
+
+        // Yesterday
+        root.startDayIndex = yesterday.getDate() - 1
+        root.startMonthIndex = yesterday.getMonth()
+        root.startYearIndex = yesterday.getFullYear() - root.baseYear
+
+        // Today
+        root.endDayIndex = today.getDate() - 1
+        root.endMonthIndex = today.getMonth()
+        root.endYearIndex = today.getFullYear() - root.baseYear
+    }
+
     function getDaysInMonth(monthIndex, year) {
-        // monthIndex is 0-11 (Jan-Dec)
         return new Date(year, monthIndex + 1, 0).getDate()
     }
 
@@ -26,21 +40,19 @@ Rectangle {
         return n < 10 ? "0" + n : n
     }
 
-    // Internal model for years
+    property int baseYear: 2020
     property var yearModel: {
         var arr = []
         for (var i = 0; i < 30; i++)
-            arr.push(root.baseYear + i)
+            arr.push(baseYear + i)
         return arr
     }
 
-    // Shield MouseArea
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
     }
 
-    // Component for the ":"
     Component {
         id: colonSeparator
         Item {
@@ -57,46 +69,71 @@ Rectangle {
         }
     }
 
-    // --- DATE SELECTION SLOTS ---
-    Rectangle {
+    Component {
+        id: dateSlotButton
+        Button {
+            property var slotModel: 31
+            property int slotIndex: 0
+            property string displayValue: "01"
+            property var confirmCallback: null
+            width: 90
+            height: 60
+            background: Rectangle {
+                color: "#15000000"
+                border.color: "#AACCFF"
+                radius: 4
+                opacity: parent.down ? 0.5 : 1.0
+            }
+            contentItem: Text {
+                text: parent.displayValue
+                color: "white"
+                font.bold: true
+                font.pixelSize: 32
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+            }
+            onClicked: bigSlotPopup.open(slotModel, slotIndex, confirmCallback)
+        }
+    }
+
+    Item {
         id: slotsContainer
         width: 990
         height: 115
-        color: "transparent"
         anchors.top: parent.top
         anchors.topMargin: 32
-        anchors.left: parent.left
-        anchors.leftMargin: 64
+        anchors.horizontalCenter: parent.horizontalCenter
 
         Row {
             id: dateSelectionRow
-            spacing: 79
-            anchors.verticalCenter: parent.verticalCenter
+            spacing: 60
+            anchors.centerIn: parent
 
-            // --- FROM SECTION ---
+            // --- FROM SECTION (Yesterday) ---
             Row {
-                spacing: 32
-                anchors.verticalCenter: parent.verticalCenter
+                spacing: 20
                 Text {
                     text: "From"
                     color: "#0FE6EF"
                     font.family: "Roboto"
                     font.pixelSize: 40
+                    anchors.verticalCenter: parent.verticalCenter
                 }
                 Row {
-                    spacing: 10
-                    // Day Loader
+                    spacing: 8
+                    anchors.verticalCenter: parent.verticalCenter
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
                             item.width = 74
-                            // Logic: Get days based on currently selected Month/Year
                             item.slotModel = Qt.binding(
                                         () => getDaysInMonth(
                                             root.startMonthIndex,
                                             yearModel[root.startYearIndex]))
                             item.slotIndex = Qt.binding(
                                         () => root.startDayIndex)
+                            item.displayValue = Qt.binding(
+                                        () => pad(root.startDayIndex + 1))
                             item.confirmCallback = function (idx) {
                                 root.startDayIndex = idx
                             }
@@ -105,64 +142,53 @@ Rectangle {
                     Loader {
                         sourceComponent: colonSeparator
                     }
-                    // Month Loader
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
-                            item.width = 90
+                            item.width = 80
                             item.slotModel = 12
                             item.slotIndex = Qt.binding(
                                         () => root.startMonthIndex)
+                            item.displayValue = Qt.binding(
+                                        () => pad(root.startMonthIndex + 1))
                             item.confirmCallback = function (idx) {
                                 root.startMonthIndex = idx
-                                // Validation: if month changed to one with fewer days, clamp the day index
-                                var maxDays = getDaysInMonth(
-                                            idx, yearModel[root.startYearIndex])
-                                if (root.startDayIndex >= maxDays)
-                                    root.startDayIndex = maxDays - 1
                             }
                         }
                     }
                     Loader {
                         sourceComponent: colonSeparator
                     }
-                    // Year Loader
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
-                            item.width = 89
+                            item.width = 110
                             item.slotModel = filterPopup.yearModel
-                            item.displayValue = Qt.binding(
-                                        () => yearModel[root.startYearIndex])
                             item.slotIndex = Qt.binding(
                                         () => root.startYearIndex)
+                            item.displayValue = Qt.binding(
+                                        () => yearModel[root.startYearIndex])
                             item.confirmCallback = function (idx) {
                                 root.startYearIndex = idx
-                                // Validation: Check leap year if Feb 29 is selected
-                                var maxDays = getDaysInMonth(
-                                            root.startMonthIndex,
-                                            yearModel[idx])
-                                if (root.startDayIndex >= maxDays)
-                                    root.startDayIndex = maxDays - 1
                             }
                         }
                     }
                 }
             }
 
-            // --- TO SECTION ---
+            // --- TO SECTION (Today) ---
             Row {
-                spacing: 25
-                anchors.verticalCenter: parent.verticalCenter
+                spacing: 20
                 Text {
                     text: "To"
                     color: "#0FE6EF"
                     font.family: "Roboto"
                     font.pixelSize: 40
+                    anchors.verticalCenter: parent.verticalCenter
                 }
                 Row {
-                    spacing: 5
-                    // Day Loader
+                    spacing: 8
+                    anchors.verticalCenter: parent.verticalCenter
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
@@ -172,6 +198,8 @@ Rectangle {
                                             root.endMonthIndex,
                                             yearModel[root.endYearIndex]))
                             item.slotIndex = Qt.binding(() => root.endDayIndex)
+                            item.displayValue = Qt.binding(
+                                        () => pad(root.endDayIndex + 1))
                             item.confirmCallback = function (idx) {
                                 root.endDayIndex = idx
                             }
@@ -180,41 +208,33 @@ Rectangle {
                     Loader {
                         sourceComponent: colonSeparator
                     }
-                    // Month Loader
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
-                            item.width = 90
+                            item.width = 80
                             item.slotModel = 12
                             item.slotIndex = Qt.binding(
                                         () => root.endMonthIndex)
+                            item.displayValue = Qt.binding(
+                                        () => pad(root.endMonthIndex + 1))
                             item.confirmCallback = function (idx) {
                                 root.endMonthIndex = idx
-                                var maxDays = getDaysInMonth(
-                                            idx, yearModel[root.endYearIndex])
-                                if (root.endDayIndex >= maxDays)
-                                    root.endDayIndex = maxDays - 1
                             }
                         }
                     }
                     Loader {
                         sourceComponent: colonSeparator
                     }
-                    // Year Loader
                     Loader {
                         sourceComponent: dateSlotButton
                         onLoaded: {
-                            item.width = 89
+                            item.width = 110
                             item.slotModel = filterPopup.yearModel
+                            item.slotIndex = Qt.binding(() => root.endYearIndex)
                             item.displayValue = Qt.binding(
                                         () => yearModel[root.endYearIndex])
-                            item.slotIndex = Qt.binding(() => root.endYearIndex)
                             item.confirmCallback = function (idx) {
                                 root.endYearIndex = idx
-                                var maxDays = getDaysInMonth(
-                                            root.endMonthIndex, yearModel[idx])
-                                if (root.endDayIndex >= maxDays)
-                                    root.endDayIndex = maxDays - 1
                             }
                         }
                     }
@@ -223,23 +243,21 @@ Rectangle {
         }
     }
 
-    // --- BOTTOM BUTTONS ---
     Rectangle {
         id: buttonsContainer
         width: 966
         height: 74
         color: "transparent"
-        anchors.top: slotsContainer.bottom
-        anchors.topMargin: 32
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 24
         anchors.horizontalCenter: parent.horizontalCenter
-
         Row {
             anchors.centerIn: parent
-            spacing: 8
+            spacing: 12
             Button {
                 text: "Cancel"
-                width: 479
-                height: 74
+                width: 460
+                height: 70
                 background: Rectangle {
                     color: parent.down
                            || parent.hovered ? "white" : "transparent"
@@ -249,7 +267,6 @@ Rectangle {
                 contentItem: Text {
                     text: parent.text
                     color: parent.down || parent.hovered ? "#007D99" : "white"
-                    font.family: "Roboto"
                     font.pixelSize: 26
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
@@ -258,8 +275,8 @@ Rectangle {
             }
             Button {
                 text: "Submit"
-                width: 479
-                height: 74
+                width: 460
+                height: 70
                 background: Rectangle {
                     color: parent.down
                            || parent.hovered ? "white" : "transparent"
@@ -269,19 +286,21 @@ Rectangle {
                 contentItem: Text {
                     text: parent.text
                     color: parent.down || parent.hovered ? "#007D99" : "white"
-                    font.family: "Roboto"
                     font.pixelSize: 26
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
                 onClicked: {
-                    var sD = pad(root.startDayIndex + 1), sM = pad(
-                                                              root.startMonthIndex + 1)
+                    var sD = pad(root.startDayIndex
+                                 + 1), sM = pad(
+                                           root.startMonthIndex
+                                           + 1), sY = yearModel[root.startYearIndex]
                     var eD = pad(root.endDayIndex + 1), eM = pad(
-                                                            root.endMonthIndex + 1)
-                    var sY = yearModel[root.startYearIndex], eY = yearModel[root.endYearIndex]
-                    submitClicked(sD + "/" + sM + "/" + sY,
-                                  eD + "/" + eM + "/" + eY)
+                                                            root.endMonthIndex
+                                                            + 1), eY = yearModel[root.endYearIndex]
+                    var startDateISO = sY + "-" + sM + "-" + sD
+                    var endDateISO = eY + "-" + eM + "-" + eD
+                    filterPopup.submitClicked(startDateISO, endDateISO)
                 }
             }
         }

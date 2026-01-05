@@ -10,105 +10,70 @@ Item {
     visible: false
     opacity: 0
 
+    // === PROPERTIES ===
     property bool isFiltered: false
-
-    // === 1. DATE STATE VARIABLES ===
     property int startDayIndex: 0
     property int startMonthIndex: 0
     property int startYearIndex: 0
     property int endDayIndex: 0
     property int endMonthIndex: 0
     property int endYearIndex: 0
-
     property int baseYear: 2020
 
-    // === ADDED: AUTOCLOSE LOGIC ===
+    // === AUTOCLOSE LOGIC ===
     property real progressValue: 0
     property bool progressActive: false
     property bool progressFinished: false
     property real speedValue: 0
 
-    // -----------------------------------------------------------
-    // NEW: 10s Timer for Speed Limit Auto-Close
-    // -----------------------------------------------------------
     Timer {
         id: speedCloseTimer
-        interval: 10000 // 10 seconds
-        repeat: false
-        onTriggered: {
-            console.log("Speed limit timer expired: Auto-closing popup.")
-            root.hide()
-        }
+        interval: 10000
+        onTriggered: root.hide()
     }
 
     Timer {
         id: autoCloseTimer
         interval: 100
         repeat: true
-
         onTriggered: {
             if (!progressActive)
                 return
-
-            progressValue += 0.01 // Increment progress
-
-            if (progressValue > 1.0)
-                progressValue = 1.0
-
+            progressValue += 0.01
             if (progressValue >= 1.0) {
                 progressActive = false
                 progressFinished = true
-                autoCloseTimer.stop()
-
-                // Check speed immediately upon finishing initial load
-                speedValue = Number(appCore.speed)
-                if (speedValue > 0) {
-                    // Start the 10s countdown if moving
-                    if (!speedCloseTimer.running) {
-                        speedCloseTimer.start()
-                    }
-                }
+                stop()
+                if (Number(appCore.speed) > 0)
+                    speedCloseTimer.start()
             }
         }
     }
 
     Connections {
         target: appCore
-
         function onSpeedChanged() {
-            if (!visible)
+            if (!visible || !progressFinished)
                 return
-
-            // Only enforce speed checks after the initial loading phase
-            if (!progressFinished)
-                return
-
             var v = Number(appCore.speed)
-            speedValue = v
-
             if (v > 0) {
-                // Vehicle is moving: Start the 10s countdown to close
-                if (!speedCloseTimer.running) {
+                if (!speedCloseTimer.running)
                     speedCloseTimer.start()
-                }
             } else {
-                // Vehicle stopped: Cancel the countdown (user can keep reading)
-                if (speedCloseTimer.running) {
-                    speedCloseTimer.stop()
-                }
+                speedCloseTimer.stop()
             }
         }
     }
 
-    // === C++ INTERFACE ===
+    // === INTERFACE FUNCTIONS ===
     function refreshData() {
         if (typeof auditModel !== "undefined")
             auditModel.refresh()
     }
 
-    function filterByDateRange(startDateStr, endDateStr) {
+    function filterByDateRange(s, e) {
         if (typeof auditModel !== "undefined") {
-            auditModel.applyFilter(startDateStr, endDateStr)
+            auditModel.applyFilter(s, e)
             tableList.contentY = 0
             isFiltered = true
         }
@@ -118,69 +83,63 @@ Item {
         return n < 10 ? "0" + n : n
     }
 
-    // === MODIFIED: onVisibleChanged ===
     onVisibleChanged: {
         if (visible) {
-            // Existing logic
             refreshData()
-
-            // Reset Auto-close logic
             progressValue = 0
             progressActive = true
             progressFinished = false
             autoCloseTimer.start()
-
-            speedValue = Number(appCore.speed)
         } else {
-            // Stop logic on hide
             progressActive = false
             autoCloseTimer.stop()
-
-            // NEW: Ensure speed timer stops if closed manually
             speedCloseTimer.stop()
         }
     }
 
-    // === POPUP ANIMATION (FADE ONLY) ===
     function show() {
         visible = true
         opacity = 1
     }
 
+    // START FADING ONLY
     function hide() {
-        // 1. Start Fade Out
         opacity = 0
         hideTimer.start()
-
-        // 2. Reset Filter Popup Visibility
-        filterPopup.visible = false
-
-        // 3. Reset Scroll Position
-        tableList.contentY = 0
-
-        // 4. Reset Date Picker Indices (Reset values)
-        startDayIndex = 0
-        startMonthIndex = 0
-        startYearIndex = 0
-        endDayIndex = 0
-        endMonthIndex = 0
-        endYearIndex = 0
-
-        // 5. Clear C++ Filter if applied
-        if (isFiltered && typeof auditModel !== "undefined") {
-            auditModel.clearFilter()
-            isFiltered = false
-        }
     }
 
+    // RESET EVERYTHING HERE (AFTER 400ms FADE)
     Timer {
         id: hideTimer
         interval: 400
         repeat: false
-        onTriggered: root.visible = false
+        onTriggered: {
+            // 1. Finalize visibility
+            root.visible = false
+
+            // 2. Reset internal popups (so they aren't open next time)
+            filterPopup.visible = false
+            detailsPopup.visible = false
+
+            // 3. Reset table scroll
+            tableList.contentY = 0
+
+            // 4. Reset date picker indices to 0
+            startDayIndex = 0
+            startMonthIndex = 0
+            startYearIndex = 0
+            endDayIndex = 0
+            endMonthIndex = 0
+            endYearIndex = 0
+
+            // 5. Clear C++ Filters
+            if (isFiltered && typeof auditModel !== "undefined") {
+                auditModel.clearFilter()
+                isFiltered = false
+            }
+        }
     }
 
-    // This controls the Fade In / Fade Out speed
     Behavior on opacity {
         NumberAnimation {
             duration: 400
@@ -194,18 +153,16 @@ Item {
     }
 
     // ==========================================================
-    // === REUSABLE COMPONENT: SELECTION WHEEL POPUP ===
+    // === REUSABLE: 3-VALUE SELECTION WHEEL ===
     // ==========================================================
     Rectangle {
         id: bigSlotPopup
         anchors.fill: parent
         color: "#AA000000"
-        z: 200
+        z: 1000
         visible: false
-        opacity: 0
-
-        property var currentModel: 1
-        property int tempIndex: 0
+        opacity: visible ? 1 : 0
+        property var currentModel: []
         property var updateCallback: null
 
         Behavior on opacity {
@@ -214,105 +171,75 @@ Item {
             }
         }
 
+        function open(dataModel, initialIndex, callback) {
+            currentModel = dataModel
+            bigTumbler.currentIndex = initialIndex
+            updateCallback = callback
+            visible = true
+        }
+        function close() {
+            visible = false
+        }
+
         MouseArea {
             anchors.fill: parent
-            hoverEnabled: true
-            preventStealing: true
             onClicked: bigSlotPopup.close()
         }
 
         Rectangle {
-            width: 250
-            height: 375
+            width: 320
+            height: 480
             color: "#005566"
             radius: 20
             border.color: "white"
             border.width: 2
             anchors.centerIn: parent
-
             MouseArea {
                 anchors.fill: parent
             }
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 10
-
-                Item {
+                anchors.margins: 20
+                Tumbler {
+                    id: bigTumbler
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-
-                    Tumbler {
-                        id: bigTumbler
-                        anchors.centerIn: parent
-                        width: parent.width
-                        height: parent.height
-                        model: bigSlotPopup.currentModel
-                        visibleItemCount: 3
-
-                        delegate: Text {
-                            // Fix: Pad numbers < 100, leave years > 100 as is
-                            text: (typeof modelData
-                                   === "number") ? (modelData
-                                                    > 100 ? modelData : root.pad(
-                                                                modelData + 1)) : modelData
-
-                            color: "white"
-                            font.family: "Roboto"
-                            font.pixelSize: 50
-                            font.bold: true
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            opacity: 1.0 - Math.abs(Tumbler.displacement)
-                                     / (Tumbler.tumbler.visibleItemCount / 2)
-                            scale: 1.0 - Math.abs(Tumbler.displacement)
-                                   / (Tumbler.tumbler.visibleItemCount / 1.5)
-                        }
-
-                        background: Rectangle {
-                            anchors.fill: parent
-                            color: "transparent"
-                            Rectangle {
-                                width: parent.width * 0.6
-                                height: 2
-                                color: "#0FE6EF"
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                y: (parent.height / 2) - 35
-                            }
-                            Rectangle {
-                                width: parent.width * 0.6
-                                height: 2
-                                color: "#0FE6EF"
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                y: (parent.height / 2) + 35
-                            }
-                        }
+                    model: bigSlotPopup.currentModel
+                    visibleItemCount: 3
+                    clip: true
+                    delegate: Text {
+                        text: (typeof modelData
+                               === "number") ? (modelData > 100 ? modelData : root.pad(
+                                                                      modelData + 1)) : modelData
+                        color: "white"
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        scale: 1.0 - Math.abs(Tumbler.displacement) * 0.4
+                        opacity: 1.0 - Math.abs(Tumbler.displacement) * 0.5
+                        font.pixelSize: 55
                     }
                 }
-
                 Button {
                     text: "OK"
                     Layout.preferredWidth: 200
                     Layout.preferredHeight: 60
                     Layout.alignment: Qt.AlignHCenter
                     background: Rectangle {
-                        color: parent.down
-                               || parent.hovered ? "white" : "transparent"
-                        radius: 10
+                        color: parent.down ? "white" : "transparent"
                         border.color: "white"
+                        radius: 10
                     }
                     contentItem: Text {
-                        text: parent.text
-                        color: parent.down
-                               || parent.hovered ? "#007D99" : "white"
-                        font.family: "Roboto"
-                        font.pixelSize: 24
+                        text: "OK"
+                        color: parent.down ? "#007D99" : "white"
+                        font.pixelSize: 28
+                        font.bold: true
                         horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        if (bigSlotPopup.updateCallback) {
+                        if (typeof bigSlotPopup.updateCallback === "function") {
                             bigSlotPopup.updateCallback(bigTumbler.currentIndex)
                         }
                         bigSlotPopup.close()
@@ -320,89 +247,145 @@ Item {
                 }
             }
         }
-
-        function open(dataModel, initialIndex, callback) {
-            currentModel = dataModel
-            bigTumbler.positionViewAtIndex(initialIndex, Tumbler.Center)
-            bigTumbler.currentIndex = initialIndex
-            updateCallback = callback
-            visible = true
-            opacity = 1
-        }
-
-        function close() {
-            opacity = 0
-            visible = false
-        }
     }
 
     // ==========================================================
-    // === REUSABLE COMPONENT: DATE SLOT BUTTON ===
+    // === CONFIG DETAILS POPUP ===
     // ==========================================================
-    Component {
-        id: dateSlotButton
-        Button {
-            property var slotModel: 31
-            property int slotIndex: 0
-            property string displayValue: root.pad(slotIndex + 1)
-            property var confirmCallback: null
+    Rectangle {
+        id: detailsPopup
+        anchors.fill: parent
+        color: "#AA000000"
+        visible: false
+        z: 600
+        property string detailContent: ""
+        function open(content) {
+            detailContent = content
+            visible = true
+        }
 
-            // Default values, can be overridden by Loader
-            width: 90
-            height: 60
+        Rectangle {
+            id: detailsInnerBox
+            width: 1859
+            height: 550
+            radius: 40
+            anchors.centerIn: parent
+            anchors.verticalCenterOffset: -45
+            color: Qt.rgba(0, 0.49, 0.60, 0.8)
+            border.color: "white"
+            border.width: 1
+            clip: true
 
-            background: Rectangle {
-                color: "#15000000"
-                border.color: "#AACCFF"
-                border.width: 1
-                radius: 4
-                Rectangle {
-                    anchors.fill: parent
-                    color: "white"
-                    opacity: parent.parent.down ? 0.2 : 0
+            MouseArea {
+                anchors.fill: parent
+            }
+
+            Item {
+                id: detailsHeaderArea
+                width: parent.width - 80
+                height: 60
+                anchors.top: parent.top
+                anchors.topMargin: 40
+                anchors.horizontalCenter: parent.horizontalCenter
+                Row {
+                    spacing: 20
+                    anchors.left: parent.left
+                    Image {
+                        width: 50
+                        height: 50
+                        source: "qrc:/images/audit_trail.png"
+                        fillMode: Image.PreserveAspectFit
+                    }
+                    Text {
+                        text: "AUDIT TRAIL"
+                        font.pixelSize: 40
+                        color: "white"
+                        font.weight: Font.Medium
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+                Button {
+                    id: closeBtn
+                    text: "CLOSE"
+                    width: 200
+                    height: 55
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    background: Rectangle {
+                        color: closeBtn.down ? "white" : "transparent"
+                        border.color: "white"
+                        border.width: 2
+                        radius: 12
+                    }
+                    contentItem: Text {
+                        text: closeBtn.text
+                        color: closeBtn.down ? "#007D99" : "white"
+                        font.pixelSize: 28
+                        font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                    onClicked: detailsPopup.visible = false
                 }
             }
 
-            contentItem: Text {
-                text: parent.displayValue
+            Rectangle {
+                id: detailsLine
+                width: parent.width - 80
+                height: 2
                 color: "white"
-                font.family: "Roboto"
-                font.bold: true
-                font.pixelSize: 32
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
+                anchors.top: detailsHeaderArea.bottom
+                anchors.topMargin: 20
+                anchors.horizontalCenter: parent.horizontalCenter
             }
 
-            onClicked: {
-                bigSlotPopup.open(slotModel, slotIndex, confirmCallback)
+            ScrollView {
+                id: detailsScroll
+                anchors.top: detailsLine.bottom
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                clip: true
+                // HIDE SCROLLBARS HERE
+                ScrollBar.vertical.policy: ScrollBar.AlwaysOff
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+                TextArea {
+                    text: detailsPopup.detailContent
+                    color: "white"
+                    font.family: "Roboto Mono"
+                    font.pixelSize: 30
+                    readOnly: true
+                    wrapMode: Text.WordWrap
+                    leftPadding: 40
+                    rightPadding: 40
+                    topPadding: 1
+                    bottomPadding: 4
+                    background: null
+                }
             }
         }
     }
 
-    // === MAIN AUDIT BOX ===
+    // === MAIN POPUP BOX ===
     Rectangle {
         id: popupRect
         width: 1859
         height: 550
-
+        radius: 40
         anchors.centerIn: parent
         anchors.verticalCenterOffset: -45
-
-        radius: 40
         color: Qt.rgba(0, 0.49, 0.60, 0.8)
-        border.color: "#FFFFFF"
+        border.color: "white"
         border.width: 1
-
         MouseArea {
             anchors.fill: parent
+            // We don't need onClicked code; simply existing here consumes the event.
         }
-
         Column {
             anchors.fill: parent
             anchors.margins: 40
             spacing: 20
-
-            // Header
             Row {
                 height: 60
                 spacing: 20
@@ -414,7 +397,6 @@ Item {
                 }
                 Text {
                     text: "AUDIT TRAIL"
-                    font.family: "Encode Sans"
                     font.pixelSize: 40
                     color: "white"
                     font.weight: Font.Medium
@@ -422,7 +404,6 @@ Item {
                 }
             }
 
-            // Columns Header
             Rectangle {
                 width: parent.width - 40
                 height: 50
@@ -430,9 +411,7 @@ Item {
                 Row {
                     anchors.fill: parent
                     component HeaderText: Text {
-                        font.family: "Roboto"
                         font.pixelSize: 40
-                        font.weight: Font.Medium
                         color: "white"
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
@@ -454,20 +433,13 @@ Item {
                             anchors.centerIn: parent
                             Text {
                                 text: "Date"
-                                font.family: "Roboto"
                                 font.pixelSize: 40
-                                font.weight: Font.Medium
                                 color: "white"
                             }
-                            Rectangle {
+                            Image {
+                                source: "qrc:/images/filter_icon.png"
                                 width: 40
                                 height: 40
-                                color: "transparent"
-                                Image {
-                                    anchors.fill: parent
-                                    source: "qrc:/images/filter_icon.png"
-                                    fillMode: Image.PreserveAspectFit
-                                }
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: filterPopup.visible = !filterPopup.visible
@@ -481,7 +453,7 @@ Item {
                     }
                     HeaderText {
                         text: "Changes"
-                        width: parent.width * 0.30
+                        width: parent.width * 0.3
                     }
                 }
                 Rectangle {
@@ -492,24 +464,19 @@ Item {
                 }
             }
 
-            // List
             ListView {
                 id: tableList
                 width: parent.width - 40
                 height: parent.height - 150
                 clip: true
                 model: auditModel
-                property int rowHeightPx: 62
-                flickDeceleration: 1500
-                maximumFlickVelocity: 2500
                 delegate: Rectangle {
                     width: tableList.width
-                    height: tableList.rowHeightPx
+                    height: 62
                     color: index % 2 === 0 ? "#10FFFFFF" : "transparent"
                     Row {
                         anchors.fill: parent
                         component CellText: Text {
-                            font.family: "Roboto"
                             font.pixelSize: 32
                             color: "white"
                             verticalAlignment: Text.AlignVCenter
@@ -533,32 +500,43 @@ Item {
                             text: model.time
                             width: parent.width * 0.15
                         }
-                        CellText {
-                            text: model.changes
-                            width: parent.width * 0.30
+                        Item {
+                            width: parent.width * 0.3
+                            height: parent.height
+                            Button {
+                                text: "Show Config"
+                                anchors.centerIn: parent
+                                width: parent.width * 0.8
+                                height: 45
+                                background: Rectangle {
+                                    color: parent.down ? "white" : "transparent"
+                                    border.color: "white"
+                                    radius: 10
+                                }
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: parent.down ? "#007D99" : "white"
+                                    font.pixelSize: 22
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: detailsPopup.open(model.changes)
+                            }
                         }
                     }
                 }
             }
         }
 
-        // === FILTER POPUP ===
         DateFilter {
             id: filterPopup
             visible: false
             anchors.centerIn: parent
-
-            // Handle the Cancel Signal
-            onCancelClicked: {
+            onCancelClicked: filterPopup.visible = false
+            onSubmitClicked: function (start, end) {
+                filterByDateRange(start, end)
                 filterPopup.visible = false
             }
-
-            // Handle the Submit Signal
-            onSubmitClicked: (start, end) => {
-                                 console.log("Filtering from", start, "to", end)
-                                 root.filterByDateRange(start, end)
-                                 filterPopup.visible = false
-                             }
         }
     }
 }
